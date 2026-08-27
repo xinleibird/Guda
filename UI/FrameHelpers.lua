@@ -58,16 +58,19 @@ function GudaBag.CategorizeItem(itemData, bagID, slotID, categories, specialItem
 
     -- CategoryManager 可用时使用其规则引擎，否则回退到旧逻辑。
     -- 快速路径：仅查缓存。CacheWarmer 会在后台填充 categoryCache；
-    -- 冷缓存未命中时跳过规则评估（否则会触发逐物品的 tooltip 扫描），
-    -- 用 itemData.class 作为粗略分类。
-    -- CacheWarmer 的完成标记会重新触发 BagFrame:Update，
-    -- 使物品在预热完成后落入真实分类。
+    -- 冷缓存未命中时直接回退到完整 CategorizeItem 评估，让自定义规则
+    -- 即使在首次打开背包时也立即生效。CacheWarmer 已经预热了
+    -- ItemDetection / tooltip 缓存（见 Core/CacheWarmer.lua:Initialize），
+    -- 所以这次评估不会触发阻塞的 tooltip 扫描。评估结果会回写
+    -- categoryCache，下次打开背包时变缓存命中。
     if addon.Modules.CategoryManager then
         if addon.Modules.CategoryManager.CategorizeItemCached then
             cat = addon.Modules.CategoryManager:CategorizeItemCached(itemData, isOtherChar)
         end
         if not cat then
-            cat = itemData.class or "Miscellaneous"
+            cat = addon.Modules.CategoryManager:CategorizeItem(itemData, bagID, slotID, isOtherChar)
+                      or itemData.class
+                      or "Miscellaneous"
         end
         if not categories[cat] then cat = "Miscellaneous" end
         table.insert(categories[cat], {bagID = bagID, slotID = slotID, itemData = itemData})
