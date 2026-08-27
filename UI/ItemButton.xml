@@ -1,0 +1,101 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+
+    <!-- 物品按钮模板（继承暴雪容器物品按钮以获得经典行为/皮肤） -->
+    <Button name="Guda_ItemButtonTemplate" virtual="true" inherits="ContainerFrameItemButtonTemplate">
+        <Size>
+            <AbsDimension x="37" y="37"/>
+        </Size>
+
+        <Layers>
+            <!-- 品质颜色环（比正常的略大的 UI-EmptySlot，位于其后方） -->
+            <Layer level="BACKGROUND" textureSubLevel="-1">
+                <Texture name="$parent_QualityRing" file="Interface\Buttons\UI-EmptySlot" hidden="true">
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <!-- 空位置背景贴图（经典背包图案，覆盖品质颜色环中心） -->
+            <Layer level="BACKGROUND">
+                <Texture name="$parent_EmptySlotBg" file="Interface\Buttons\UI-EmptySlot" hidden="false">
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            
+            <!-- 自定义物品数量（在回滚状态下有意与暴雪的 $parentCount 共存） -->
+            <Layer level="OVERLAY">
+                <FontString name="$parent_Count" inherits="NumberFontNormal" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT">
+                            <Offset>
+                                <AbsDimension x="-8" y="8"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parent_Charges" inherits="NumberFontNormal" justifyH="RIGHT" hidden="true">
+                    <Color r="1" g="0.82" b="0"/>
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT">
+                            <Offset>
+                                <AbsDimension x="-8" y="20"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <Texture name="$parent_Check" file="Interface\Buttons\UI-CheckBox-Check" hidden="true">
+                    <Size>
+                        <AbsDimension x="24" y="24"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="CENTER"/>
+                    </Anchors>
+                </Texture>
+                <!-- 拾取标记：最近拾取窗口内物品右上角显示的星星图标（xingxing.blp） -->
+                <Texture name="$parent_LootMarker" file="Interface\AddOns\guda\Assets\xingxing.blp" hidden="true">
+                    <Size>
+                        <AbsDimension x="16" y="16"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPRIGHT">
+                            <Offset>
+                                <AbsDimension x="1" y="1"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+                <!-- 拾取标记边框样式：红色呼吸边框（包裹整个按钮，默认隐藏） -->
+                <Texture name="$parent_LootMarkerBorder" file="Interface\Buttons\UI-ActionButton-Border" hidden="true" alphaMode="ADD">
+                    <Size>
+                        <AbsDimension x="52" y="52"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="CENTER"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+
+        <Scripts>
+            <OnLoad>
+                -- 我们的视觉设置
+                GudaBag.ItemButton_OnLoad(this)
+                -- 确保暴雪默认容器物品按钮行为处于启用状态
+                if ContainerFrameItemButton_OnLoad then
+                ContainerFrameItemButton_OnLoad()
+                end
+            </OnLoad>
+            <OnEnter>
+                GudaBag.ItemButton_OnEnter(this)
+            </OnEnter>
+            <OnLeave>
+                GudaBag.ItemButton_OnLeave(this)
+            </OnLeave>
+        </Scripts>
+    </Button>
+
+</Ui>

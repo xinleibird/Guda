@@ -1,0 +1,1042 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+
+    <!-- 主背包框架 -->
+    <!-- Strata 为 HIGH（低于 FULLSCREEN/FULLSCREEN_DIALOG），
+         这样暴雪的堆叠拆分对话框（StackSplitFrame, FULLSCREEN）会渲染在背包之上，
+         其按钮不会隐藏在背包后面。 -->
+    <Frame name="Guda_BagFrame" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent" frameStrata="HIGH">
+        <Size>
+            <AbsDimension x="420" y="600"/>
+        </Size>
+
+        <Anchors>
+            <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="UIParent">
+                <Offset>
+                    <AbsDimension x="-50" y="100"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+
+        <Layers>
+            <!-- 顶部标题 -->
+            <Layer level="ARTWORK">
+                <FontString name="$parent_Title" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="0" y="-12"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+            <!-- 关闭按钮 -->
+            <Button name="$parent_CloseButton">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Scripts>
+                    <OnLoad>
+                        this:SetNormalTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetPushedTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetHighlightTexture("Interface\\AddOns\\Guda\\Assets\\close", "ADD")
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                        local ht = this:GetHighlightTexture()
+                        if ht then ht:SetAlpha(0.5) end
+                    </OnLoad>
+                    <OnEnter>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(1, 1, 1) end
+                    </OnEnter>
+                    <OnLeave>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                    </OnLeave>
+                </Scripts>
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-13" y="-10"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Guda_BagFrame:Hide()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 设置按钮（标题栏右侧，靠近关闭按钮） -->
+            <Button name="$parent_SettingsButton">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$parent_CloseButton">
+                        <Offset>
+                            <AbsDimension x="-4" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="20" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\Cog")
+                            icon:SetTexCoord(0, 1, 0, 1)
+                        end
+                    </OnLoad>
+                    <OnClick>
+                        GudaBag.OpenSettings()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        GameTooltip:SetText(GudaBag.L["Settings"])
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 排序按钮（标题栏右侧，靠近设置按钮） -->
+            <Button name="$parent_SortButton">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="$parent_SettingsButton">
+                        <Offset>
+                            <AbsDimension x="-4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="20" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            -- 不带文件扩展名，WoW 会自动查找 .blp 文件
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\Sorting")
+                            icon:SetTexCoord(0, 1, 0, 1)
+                        end
+                        -- 注册左右键：左键正序、右键倒序
+                        this:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                    </OnLoad>
+                    <OnClick>
+                        GudaBag.BagFrame_Sort(arg1)
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        if this.isCategoryView then
+                            GameTooltip:SetText(GudaBag.L["Restack and Clean"])
+                            GameTooltip:AddLine(GudaBag.L["Merges split stacks and refreshes the view"], 0.7, 0.7, 0.7)
+                        else
+                            GameTooltip:SetText(GudaBag.L["Sort Bags"])
+                        end
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 分解快捷按钮（排序按钮左侧；当玩家已学会分解时显示）。
+                 图标在运行时从技能获取。 -->
+            <Button name="$parent_DisenchantButton" hidden="true">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="$parent_SortButton">
+                        <Offset>
+                            <AbsDimension x="-4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon" file="Interface\AddOns\Guda\Assets\soul">
+                            <Size>
+                                <AbsDimension x="20" y="20"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        if GudaBag.BagFrame_UseDisenchant then GudaBag.BagFrame_UseDisenchant() end
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 开锁快捷按钮（分解按钮左侧；当玩家是已学会开锁的盗贼时显示）。
+                 图标在运行时设置。 -->
+            <Button name="$parent_PickLockButton" hidden="true">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="$parent_DisenchantButton">
+                        <Offset>
+                            <AbsDimension x="-4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon" file="Interface\AddOns\Guda\Assets\unlock">
+                            <Size>
+                                <AbsDimension x="20" y="20"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        if GudaBag.BagFrame_UsePickLock then GudaBag.BagFrame_UsePickLock() end
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 搜索切换按钮（searchBarMode 为 "hidden"/"toggle" 时可见，
+                 位于开锁/分解/排序按钮左侧；点击展开搜索栏） -->
+            <Button name="$parent_SearchToggleButton" hidden="true">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="$parent_PickLockButton">
+                        <Offset>
+                            <AbsDimension x="-4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="18" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\search")
+                            icon:SetTexCoord(0, 1, 0, 1)
+                        end
+                    </OnLoad>
+                    <OnClick>
+                        if Guda and Guda.Modules and Guda.Modules.BagFrame
+                           and Guda.Modules.BagFrame.ToggleSearchBar then
+                            Guda.Modules.BagFrame:ToggleSearchBar()
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        GameTooltip:SetText(GudaBag.L["Search"])
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 角色按钮（标题栏左侧） -->
+            <Button name="$parent_CharsButton">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="21" y="-15"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="20" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\All_Characters")
+                            icon:SetTexCoord(0, 1, 0, 1)
+                        end
+                    </OnLoad>
+                    <OnClick>
+                        GudaBag.BagFrame_ToggleCharacterDropdown(this)
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        GameTooltip:SetText(GudaBag.L["My Characters"])
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 银行按钮（标题栏左侧，角色按钮旁） -->
+            <Button name="$parent_BankButton">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_CharsButton">
+                        <Offset>
+                            <AbsDimension x="4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="20" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\Chest")
+                            icon:SetTexCoord(0, 1, 0, 1)
+                        end
+                    </OnLoad>
+                    <OnClick>
+                        GudaBag.BagFrame_ToggleBankDropdown(this)
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        GameTooltip:SetText(GudaBag.L["View Bank"])
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 邮箱按钮（标题栏左侧，银行按钮旁） -->
+            <Button name="$parent_MailButton">
+                <Size>
+                    <AbsDimension x="24" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BankButton">
+                        <Offset>
+                            <AbsDimension x="4" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Icon">
+                            <Size>
+                                <AbsDimension x="20" y="18"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                            <Color r="0.8" g="0.8" b="0.8"/>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        local icon = getglobal(this:GetName().."_Icon")
+                        if icon then
+                            icon:SetTexture("Interface\\AddOns\\Guda\\Assets\\Envelope")
+                        end
+                    </OnLoad>
+                    <OnClick>
+                        GudaBag.BagFrame_ToggleMailDropdown(this)
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                        GameTooltip:SetText(GudaBag.L["View Mailbox"])
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+
+            <!-- 工具栏容器（用于金币 tooltip 与背包位置） -->
+            <Frame name="$parent_Toolbar" enableMouse="true">
+                <Size>
+                    <AbsDimension x="200" y="40"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="10" y="5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnMouseDown>
+                        -- 点击工具栏时清除搜索焦点
+                        local searchBox = getglobal("Guda_BagFrame_SearchBar_SearchBox")
+                        if searchBox then
+                            searchBox:ClearFocus()
+                        end
+                    </OnMouseDown>
+                </Scripts>
+
+                <Frames>
+                    <!-- 主背包（背包）位置 0 -->
+                    <Button name="$parent_BagSlot0" inherits="ItemButtonTemplate">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT">
+                                <Offset>
+                                    <AbsDimension x="13" y="3"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                GudaBag.BagSlot_OnLoad(this, 0)
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagSlot_OnClick(this, 0)
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, 0)
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, 0)
+                            </OnLeave>
+                            <OnEvent>
+                                GudaBag.BagSlot_OnEvent(this, event, arg1)
+                            </OnEvent>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 背包位置 1 -->
+                    <Button name="$parent_BagSlot1" inherits="ItemButtonTemplate" movable="true">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BagSlot0">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                this:RegisterForDrag("LeftButton")
+                                GudaBag.BagSlot_OnLoad(this, 1)
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagSlot_OnClick(this, 1)
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, 1)
+                            </OnEnter>
+                            <OnDragStart>
+                                GudaBag.BagSlot_OnDragStart(this, 1)
+                            </OnDragStart>
+                            <OnDragStop>
+                                GudaBag.BagSlot_OnDragStop(this, 1)
+                            </OnDragStop>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, 1)
+                            </OnLeave>
+                            <OnEvent>
+                                GudaBag.BagSlot_OnEvent(this, event, arg1)
+                            </OnEvent>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 背包位置 2 -->
+                    <Button name="$parent_BagSlot2" inherits="ItemButtonTemplate" movable="true">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BagSlot1">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                this:RegisterForDrag("LeftButton")
+                                GudaBag.BagSlot_OnLoad(this, 2)
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagSlot_OnClick(this, 2)
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, 2)
+                            </OnEnter>
+                            <OnDragStart>
+                                GudaBag.BagSlot_OnDragStart(this, 2)
+                            </OnDragStart>
+                            <OnDragStop>
+                                GudaBag.BagSlot_OnDragStop(this, 2)
+                            </OnDragStop>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, 2)
+                            </OnLeave>
+                            <OnEvent>
+                                GudaBag.BagSlot_OnEvent(this, event, arg1)
+                            </OnEvent>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 背包位置 3 -->
+                    <Button name="$parent_BagSlot3" inherits="ItemButtonTemplate" movable="true">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BagSlot2">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                this:RegisterForDrag("LeftButton")
+                                GudaBag.BagSlot_OnLoad(this, 3)
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagSlot_OnClick(this, 3)
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, 3)
+                            </OnEnter>
+                            <OnDragStart>
+                                GudaBag.BagSlot_OnDragStart(this, 3)
+                            </OnDragStart>
+                            <OnDragStop>
+                                GudaBag.BagSlot_OnDragStop(this, 3)
+                            </OnDragStop>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, 3)
+                            </OnLeave>
+                            <OnEvent>
+                                GudaBag.BagSlot_OnEvent(this, event, arg1)
+                            </OnEvent>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 背包位置 4 -->
+                    <Button name="$parent_BagSlot4" inherits="ItemButtonTemplate" movable="true">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BagSlot3">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                this:RegisterForDrag("LeftButton")
+                                GudaBag.BagSlot_OnLoad(this, 4)
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagSlot_OnClick(this, 4)
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, 4)
+                            </OnEnter>
+                            <OnDragStart>
+                                GudaBag.BagSlot_OnDragStart(this, 4)
+                            </OnDragStart>
+                            <OnDragStop>
+                                GudaBag.BagSlot_OnDragStop(this, 4)
+                            </OnDragStop>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, 4)
+                            </OnLeave>
+                            <OnEvent>
+                                GudaBag.BagSlot_OnEvent(this, event, arg1)
+                            </OnEvent>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 钥匙扣按钮 -->
+                    <Button name="$parent_KeyringButton" inherits="ItemButtonTemplate">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_BagSlot4">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                -- 隐藏边框（与背包位置相同）
+                                local normalTexture = getglobal(this:GetName().."NormalTexture")
+                                if normalTexture then
+                                    normalTexture:SetTexture(nil)
+                                    normalTexture:Hide()
+                                end
+                                local iconBorder = getglobal(this:GetName().."IconBorder")
+                                if iconBorder then
+                                    iconBorder:Hide()
+                                end
+
+                                -- 应用底部按钮背景
+                                GudaBag.BagSlot_ApplyBackdrop(this)
+
+                                -- 设置钥匙扣图标
+                                SetItemButtonTexture(this, "Interface\\AddOns\\Guda\\Assets\\keyring")
+
+                                this:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagFrame_ToggleKeyring()
+                            </OnClick>
+                            <OnEnter>
+                                GudaBag.BagSlot_OnEnter(this, -2)
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                                GudaBag.BagFrame_ClearHighlightedSlots()
+                                GudaBag.BagSlot_OnLeave(this, -2)
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 灵魂袋按钮（仅术士） -->
+                    <Button name="$parent_SoulBagButton" inherits="ItemButtonTemplate">
+                        <Size>
+                            <AbsDimension x="24" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_KeyringButton">
+                                <Offset>
+                                    <AbsDimension x="2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                -- 隐藏边框（与钥匙扣/背包位置相同）
+                                local normalTexture = getglobal(this:GetName().."NormalTexture")
+                                if normalTexture then
+                                    normalTexture:SetTexture(nil)
+                                    normalTexture:Hide()
+                                end
+                                local iconBorder = getglobal(this:GetName().."IconBorder")
+                                if iconBorder then
+                                    iconBorder:Hide()
+                                end
+
+                                -- 隐藏 ItemButtonTemplate 自带的数量文本
+                                local countText = getglobal(this:GetName().."Count")
+                                if countText then
+                                    countText:Hide()
+                                end
+
+                                -- 应用底部按钮背景
+                                GudaBag.BagSlot_ApplyBackdrop(this)
+
+                                -- 设置灵魂袋图标
+                                SetItemButtonTexture(this, "Interface\\AddOns\\Guda\\Assets\\soul")
+
+                                this:RegisterForClicks("LeftButtonUp")
+
+                                -- 创建自定义数量 FontString 覆盖层
+                                local shardCount = this:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+                                shardCount:SetPoint("BOTTOMRIGHT", this, "BOTTOMRIGHT", -2, 2)
+                                shardCount:SetText("")
+                                shardCount:Hide()
+                                this.countText = shardCount
+                                this.soulShardCount = 0
+
+                                -- 检查玩家职业 — 非术士则隐藏按钮
+                                local _, playerClass = UnitClass("player")
+                                if playerClass ~= "WARLOCK" then
+                                    this:Hide()
+                                end
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagFrame_ToggleSoulBag()
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                                GameTooltip:SetText(GudaBag.L["Soul Bag"], 1.0, 1.0, 1.0)
+                                local count = this.soulShardCount or 0
+                                GameTooltip:AddLine(string.format(GudaBag.L["%d Soul Shards"] or "%d Soul Shards", count), 0.8, 0.8, 0.8)
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 背包位置信息文本 -->
+                    <Frame name="$parent_BagSlotsInfo">
+                        <Size>
+                            <AbsDimension x="100" y="24"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent_KeyringButton">
+                                <Offset>
+                                    <AbsDimension x="8" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Layers>
+                            <Layer level="OVERLAY">
+                                <FontString name="$parent_Text" inherits="GameFontNormal">
+                                    <Anchors>
+                                        <Anchor point="LEFT">
+                                            <Offset>
+                                                <AbsDimension x="0" y="0"/>
+                                            </Offset>
+                                        </Anchor>
+                                    </Anchors>
+                                </FontString>
+                            </Layer>
+                        </Layers>
+                        <Scripts>
+                            <OnLoad>
+                                local text = getglobal(this:GetName().."_Text")
+                                if text then
+                                    text:SetText("0 / 0")
+                                    text:SetTextColor(0.8, 0.8, 0.8)
+                                end
+                            </OnLoad>
+                        </Scripts>
+                    </Frame>
+                </Frames>
+            </Frame>
+
+            <!-- 品质过滤栏（位于搜索框上一行，移植自 OneBag 品质模块） -->
+            <Frame name="$parent_QualityBar">
+                <Size>
+                    <AbsDimension x="400" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset>
+                            <AbsDimension x="0" y="-40"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Frame>
+
+            <!-- 搜索栏（现在位于品质过滤栏下方） -->
+            <Frame name="$parent_SearchBar">
+                <Size>
+                    <AbsDimension x="400" y="30"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_QualityBar">
+                        <Offset>
+                            <AbsDimension x="0" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+
+                <Frames>
+                    <!-- 全宽搜索框 -->
+                    <EditBox name="$parent_SearchBox" autoFocus="false" inherits="InputBoxTemplate">
+                        <Size>
+                            <AbsDimension x="0" y="20"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT">
+                                <Offset>
+                                    <AbsDimension x="16" y="0"/>
+                                </Offset>
+                            </Anchor>
+                            <Anchor point="RIGHT">
+                                <Offset>
+                                    <AbsDimension x="-10" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnEditFocusGained>
+                                if this:GetText() == GudaBag.L["Search, try ~equipment"] then
+                                    this:SetText("")
+                                    this:SetTextColor(1, 1, 1, 1)
+                                end
+                                -- 显示点击捕获器以检测背包外部的点击
+                                local clickCatcher = getglobal("Guda_ClickCatcher")
+                                if clickCatcher then clickCatcher:Show() end
+                            </OnEditFocusGained>
+                            <OnEditFocusLost>
+                                -- 失去焦点时隐藏点击捕获器
+                                local clickCatcher = getglobal("Guda_ClickCatcher")
+                                if clickCatcher then clickCatcher:Hide() end
+
+                                local wasEmpty = (this:GetText() == "")
+
+                                -- 失去焦点时若为空则恢复占位文字
+                                if wasEmpty then
+                                    this:SetText(GudaBag.L["Search, try ~equipment"])
+                                    this:SetTextColor(0.5, 0.5, 0.5, 1)
+                                    GudaBag.BagFrame_OnSearchChanged(this)
+                                end
+
+                                -- 在 "toggle" 模式下，空内容 + 失去焦点会收起搜索栏。
+                                if wasEmpty and Guda and Guda.Modules
+                                   and Guda.Modules.BagFrame
+                                   and Guda.Modules.BagFrame.searchBarExpanded then
+                                    Guda.Modules.BagFrame:ToggleSearchBar()
+                                end
+                            </OnEditFocusLost>
+                            <OnTextChanged>
+                                GudaBag.BagFrame_OnSearchChanged(this)
+                                -- 根据搜索内容显示/隐藏清除按钮
+                                local clearBtn = getglobal("Guda_BagFrame_SearchBar_ClearButton")
+                                if clearBtn then
+                                    local text = this:GetText()
+                                    if text ~= "" and text ~= GudaBag.L["Search, try ~equipment"] then
+                                        clearBtn:Show()
+                                    else
+                                        clearBtn:Hide()
+                                    end
+                                end
+                            </OnTextChanged>
+                            <OnEscapePressed>
+                                this:SetText(GudaBag.L["Search, try ~equipment"])
+                                this:SetTextColor(0.5, 0.5, 0.5, 1)
+                                this:ClearFocus()
+                                GudaBag.BagFrame_OnSearchChanged(this)
+                                -- 若处于 toggle 模式则收起搜索栏；否则不执行任何操作。
+                                if Guda and Guda.Modules and Guda.Modules.BagFrame
+                                   and Guda.Modules.BagFrame.searchBarExpanded then
+                                    Guda.Modules.BagFrame:ToggleSearchBar()
+                                end
+                            </OnEscapePressed>
+                        </Scripts>
+                    </EditBox>
+
+                    <!-- 清除搜索按钮 -->
+                    <Button name="$parent_ClearButton" hidden="true">
+                        <Size>
+                            <AbsDimension x="12" y="12"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="RIGHT" relativeTo="$parent_SearchBox" relativePoint="RIGHT">
+                                <Offset>
+                                    <AbsDimension x="-5" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <NormalTexture file="Interface\AddOns\Guda\Assets\close"/>
+                        <Scripts>
+                            <OnLoad>
+                                local searchBox = getglobal("Guda_BagFrame_SearchBar_SearchBox")
+                                if searchBox then
+                                    this:SetFrameLevel(searchBox:GetFrameLevel() + 1)
+                                end
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.4, 0.4, 0.4) end
+                            </OnLoad>
+                            <OnClick>
+                                GudaBag.BagFrame_ClearSearch()
+                            </OnClick>
+                            <OnEnter>
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.7, 0.7, 0.7) end
+                            </OnEnter>
+                            <OnLeave>
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.4, 0.4, 0.4) end
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                </Frames>
+            </Frame>
+
+            <!-- 金币显示框架（已移至右下角） -->
+            <MoneyFrame name="$parent_MoneyFrame" inherits="SmallMoneyFrameTemplate">
+                <Size x="180" y="35"/>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="Guda_BagFrame" relativePoint="BOTTOMRIGHT">
+                        <Offset x="-15" y="7"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        -- 为金币按钮子项设置 tooltip 处理器
+                        GudaBag.BagFrame_MoneyFrame_OnLoad(this)
+                    </OnLoad>
+                </Scripts>
+            </MoneyFrame>
+
+
+            <!-- 物品按钮容器 -->
+            <Frame name="$parent_ItemContainer" enableMouse="true">
+                <Size>
+                    <AbsDimension x="400" y="480"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_SearchBar" x="0" y="-5"/>
+                </Anchors>
+                <Scripts>
+                    <OnReceiveDrag>
+                        -- 将物品放入第一个可用的背包位置
+                        if CursorHasItem and CursorHasItem() then
+                            if GudaBag.PutCursorItemInFirstFreeSlot then
+                                GudaBag.PutCursorItemInFirstFreeSlot()
+                            else
+                                if PutItemInBackpack then
+                                    PutItemInBackpack()
+                                end
+                                for bag = 1, 4 do
+                                    if CursorHasItem() then
+                                        local invSlot = ContainerIDToInventoryID(bag)
+                                        if PutItemInBag then
+                                            PutItemInBag(invSlot)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                        GudaBag.ClearCursorItem()
+                    </OnReceiveDrag>
+                </Scripts>
+            </Frame>
+        </Frames>
+
+        <Scripts>
+            <OnLoad>
+                GudaBag.BagFrame_OnLoad(this)
+            </OnLoad>
+            <OnShow>
+                GudaBag.BagFrame_OnShow(this)
+            </OnShow>
+            <OnHide>
+                GudaBag.BagFrame_OnHide(this)
+            </OnHide>
+            <OnMouseDown>
+                -- 点击背包框架时清除搜索框焦点（1.12.1 安全）
+                local searchBox = getglobal("Guda_BagFrame_SearchBar_SearchBox")
+                if searchBox then
+                    searchBox:ClearFocus()
+                end
+
+                if (arg1 == "LeftButton") then
+                    this:StartMoving()
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                this:StopMovingOrSizing()
+            </OnMouseUp>
+            <OnReceiveDrag>
+                -- 将物品放入第一个可用的背包位置
+                if CursorHasItem and CursorHasItem() then
+                    if GudaBag.PutCursorItemInFirstFreeSlot then
+                        GudaBag.PutCursorItemInFirstFreeSlot()
+                    else
+                        if PutItemInBackpack then
+                            PutItemInBackpack()
+                        end
+                        for bag = 1, 4 do
+                            if CursorHasItem() then
+                                local invSlot = ContainerIDToInventoryID(bag)
+                                if PutItemInBag then
+                                    PutItemInBag(invSlot)
+                                end
+                            end
+                        end
+                    end
+                end
+                GudaBag.ClearCursorItem()
+            </OnReceiveDrag>
+        </Scripts>
+    </Frame>
+
+</Ui>

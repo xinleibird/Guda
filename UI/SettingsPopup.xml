@@ -1,0 +1,1173 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+
+    <!-- 设置弹出窗口 -->
+    <Frame name="Guda_SettingsPopup" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent" frameStrata="FULLSCREEN_DIALOG" frameLevel="100">
+        <Size>
+            <AbsDimension x="500" y="575"/>
+        </Size>
+
+        <Anchors>
+            <Anchor point="CENTER" relativePoint="CENTER" relativeTo="UIParent">
+                <Offset>
+                    <AbsDimension x="0" y="0"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+
+        <Layers>
+                <!-- 标题 -->
+            <Layer level="ARTWORK">
+                <FontString name="$parent_Title" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="0" y="-20"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <Color r="1" g="0.82" b="0"/>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+            <!-- 关闭按钮 -->
+            <Button name="$parent_CloseButton">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Scripts>
+                    <OnLoad>
+                        this:SetNormalTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetPushedTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetHighlightTexture("Interface\\AddOns\\Guda\\Assets\\close", "ADD")
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                        local ht = this:GetHighlightTexture()
+                        if ht then ht:SetAlpha(0.5) end
+                    </OnLoad>
+                    <OnEnter>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(1, 1, 1) end
+                    </OnEnter>
+                    <OnLeave>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                    </OnLeave>
+                </Scripts>
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-5" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Guda_SettingsPopup:Hide()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 选项卡按钮（6 个选项卡，每个 76px） -->
+            <!-- 顺序：常规 | 布局 | 图标 | 物品条 | 分类 | 指南 -->
+
+            <Button name="Guda_SettingsPopup_GeneralTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="20" y="-55"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.3"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="General">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["General"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("general")</OnClick>
+                </Scripts>
+            </Button>
+
+            <Button name="Guda_SettingsPopup_LayoutTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_GeneralTabButton" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.1"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="Layout">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Layout"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("layout")</OnClick>
+                </Scripts>
+            </Button>
+
+            <Button name="Guda_SettingsPopup_IconsTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_LayoutTabButton" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.1"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="Icons">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Icons"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("icons")</OnClick>
+                </Scripts>
+            </Button>
+
+            <Button name="Guda_SettingsPopup_BarTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_IconsTabButton" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.1"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="Bar">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Bar"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("bar")</OnClick>
+                </Scripts>
+            </Button>
+
+            <Button name="Guda_SettingsPopup_CategoriesTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_BarTabButton" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.1"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="Categories">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Categories"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("categories")</OnClick>
+                </Scripts>
+            </Button>
+
+            <Button name="Guda_SettingsPopup_GuideTabButton" enableMouse="true">
+                <Size><AbsDimension x="76" y="28"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_CategoriesTabButton" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="2" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parent_Bg" setAllPoints="true">
+                            <Color r="1" g="1" b="1" a="0.1"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parent_Text" inherits="GameFontNormal" text="Guide">
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Guide"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnClick>GudaBag.SettingsPopup_SelectTab("guide")</OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- ============================================ -->
+            <!-- 常规选项卡内容                               -->
+            <!-- 分区：外观、选项                             -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_GeneralTab">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Frames>
+                    <!-- 外观分区 -->
+                    <!-- 主题下拉框 -->
+                    <Frame name="Guda_SettingsPopup_ThemeDropdown" inherits="UIDropDownMenuTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="-10" y="-45"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                GudaBag.SettingsPopup_ThemeDropdown_OnLoad(this)
+                            </OnLoad>
+                        </Scripts>
+                    </Frame>
+
+                    <!-- pfUI 透明度复选框（仅在选择 pfUI 主题时可见） -->
+                    <CheckButton name="Guda_SettingsPopup_UsePfUITransparencyCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_ThemeDropdown">
+                                <Offset><AbsDimension x="130" y="2"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_UsePfUITransparencyCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_UsePfUITransparencyCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 背景透明度滑块 -->
+                    <Slider name="Guda_SettingsPopup_BgTransparencySlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ThemeDropdown">
+                                <Offset><AbsDimension x="15" y="-25"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_BgTransparencySlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_BgTransparencySlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 选项分区 -->
+                    <!-- 锁定背包复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_LockBagsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_BgTransparencySlider">
+                                <Offset><AbsDimension x="0" y="-45"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_LockBagsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_LockBagsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 隐藏边框复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_HideBordersCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_LockBagsCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_HideBordersCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_HideBordersCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 显示 Tooltip 数量复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowTooltipCountsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_LockBagsCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowTooltipCountsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowTooltipCountsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 反向堆叠排序复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ReverseStackSortCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_ShowTooltipCountsCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ReverseStackSortCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ReverseStackSortCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动化分区 -->
+                    <!-- 自动关闭背包复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoCloseBagsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ShowTooltipCountsCheckbox">
+                                <Offset><AbsDimension x="0" y="-35"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoCloseBagsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoCloseBagsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动打开背包复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoOpenBagsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_AutoCloseBagsCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoOpenBagsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoOpenBagsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动出售垃圾物品复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoVendorJunkCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_AutoCloseBagsCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoVendorJunkCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoVendorJunkCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动拾取复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoLootCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_AutoVendorJunkCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoLootCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoLootCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动打开蚌壳复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoOpenClamsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_AutoVendorJunkCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoOpenClamsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoOpenClamsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动补位复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoFillRowsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_AutoLootCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoFillRowsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoFillRowsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+                </Frames>
+            </Frame>
+
+            <!-- ============================================ -->
+            <!-- 布局选项卡内容                               -->
+            <!-- 分区：视图、列数、选项                       -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_LayoutTab" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Frames>
+                    <!-- 视图分区 -->
+                    <!-- 背包视图类型下拉框 -->
+                    <Frame name="Guda_SettingsPopup_BagViewDropdown" inherits="UIDropDownMenuTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="-10" y="-45"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_BagViewDropdown_OnLoad(this)</OnLoad>
+                        </Scripts>
+                    </Frame>
+
+                    <!-- 银行视图类型下拉框 -->
+                    <Frame name="Guda_SettingsPopup_BankViewDropdown" inherits="UIDropDownMenuTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_BagViewDropdown" relativePoint="RIGHT">
+                                <Offset><AbsDimension x="30" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_BankViewDropdown_OnLoad(this)</OnLoad>
+                        </Scripts>
+                    </Frame>
+
+                    <!-- 列数分区 -->
+                    <!-- 背包列数滑块 -->
+                    <Slider name="Guda_SettingsPopup_BagColumnsSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_BagViewDropdown">
+                                <Offset><AbsDimension x="15" y="-65"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_BagColumnsSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_BagColumnsSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 银行列数滑块 -->
+                    <Slider name="Guda_SettingsPopup_BankColumnsSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_BagColumnsSlider">
+                                <Offset><AbsDimension x="0" y="-40"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_BankColumnsSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_BankColumnsSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 选项分区 -->
+                    <!-- 显示搜索栏复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowSearchBarCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_BankColumnsSlider">
+                                <Offset><AbsDimension x="0" y="-55"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowSearchBarCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowSearchBarCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 隐藏底部栏复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_HideFooterCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_ShowSearchBarCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_HideFooterCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_HideFooterCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 隐藏背包线复选框（锚定在显示搜索栏下方） -->
+                    <CheckButton name="Guda_SettingsPopup_HoverBaglineCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ShowSearchBarCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_HoverBaglineCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_HoverBaglineCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 显示装备套装分类复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowEquipSetCategoriesCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_HoverBaglineCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowEquipSetCategoriesCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowEquipSetCategoriesCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 显示分类数量复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowCategoryCountCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_HoverBaglineCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowCategoryCountCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowCategoryCountCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 显示品质过滤栏复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowQualityBarCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_ShowCategoryCountCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowQualityBarCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowQualityBarCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 显示分类侧栏复选框（移植自 OneBag 分类模块） -->
+                    <CheckButton name="Guda_SettingsPopup_ShowCategoryBarCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ShowCategoryCountCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowCategoryBarCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowCategoryBarCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+                </Frames>
+            </Frame>
+
+            <!-- ============================================ -->
+            <!-- 图标选项卡内容                               -->
+            <!-- 分区：图标、图标选项                         -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_IconsTab" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Frames>
+                    <!-- 图标分区 -->
+                    <!-- 图标大小滑块 -->
+                    <Slider name="Guda_SettingsPopup_IconSizeSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="5" y="-35"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_IconSizeSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_IconSizeSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 图标字体大小滑块 -->
+                    <Slider name="Guda_SettingsPopup_IconFontSizeSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_IconSizeSlider">
+                                <Offset><AbsDimension x="0" y="-40"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_IconFontSizeSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_IconFontSizeSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 图标间距滑块 -->
+                    <Slider name="Guda_SettingsPopup_IconSpacingSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_IconFontSizeSlider">
+                                <Offset><AbsDimension x="0" y="-40"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_IconSpacingSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_IconSpacingSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 图标选项分区 -->
+                    <!-- 物品边框复选框（合并原装备边框/其他物品边框，同时控制两者） -->
+                    <CheckButton name="Guda_SettingsPopup_ItemBorderCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_IconSpacingSlider">
+                                <Offset><AbsDimension x="0" y="-45"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ItemBorderCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ItemBorderCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 标记不可用物品复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_MarkUnusableCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_ItemBorderCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_MarkUnusableCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_MarkUnusableCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 白色物品作为垃圾复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_WhiteItemsJunkCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ItemBorderCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_WhiteItemsJunkCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_WhiteItemsJunkCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 自动锁定套装物品复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_AutoLockSetItemsCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="Guda_SettingsPopup_WhiteItemsJunkCheckbox">
+                                <Offset><AbsDimension x="200" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_AutoLockSetItemsCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_AutoLockSetItemsCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 拾取标记样式下拉框（整合原"拾取标记"+"呼吸边框"两个复选框） -->
+                    <Frame name="Guda_SettingsPopup_LootMarkerDropdown" inherits="UIDropDownMenuTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_WhiteItemsJunkCheckbox">
+                                <Offset><AbsDimension x="0" y="-25"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_LootMarkerDropdown_OnLoad(this)</OnLoad>
+                        </Scripts>
+                    </Frame>
+
+                    <!-- 垃圾物品透明度滑块 -->
+                    <Slider name="Guda_SettingsPopup_JunkOpacitySlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_LootMarkerDropdown">
+                                <Offset><AbsDimension x="0" y="-30"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_JunkOpacitySlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_JunkOpacitySlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+                </Frames>
+            </Frame>
+
+            <!-- ============================================ -->
+            <!-- 物品条选项卡内容                             -->
+            <!-- 分区：任务物品条、追踪物品条                 -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_BarTab" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Frames>
+                    <!-- 任务物品条分区 -->
+                    <!-- 显示任务物品条复选框 -->
+                    <CheckButton name="Guda_SettingsPopup_ShowQuestBarCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="5" y="-30"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_ShowQuestBarCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>GudaBag.SettingsPopup_ShowQuestBarCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
+                    <!-- 任务物品条大小滑块 -->
+                    <Slider name="Guda_SettingsPopup_QuestBarSizeSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ShowQuestBarCheckbox">
+                                <Offset><AbsDimension x="0" y="-20"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_QuestBarSizeSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_QuestBarSizeSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+
+                    <!-- 追踪物品条分区 -->
+                    <!-- 追踪物品条大小滑块 -->
+                    <Slider name="Guda_SettingsPopup_TrackedBarSizeSlider" inherits="OptionsSliderTemplate">
+                        <Size><AbsDimension x="450" y="17"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_QuestBarSizeSlider">
+                                <Offset><AbsDimension x="0" y="-55"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>GudaBag.SettingsPopup_TrackedBarSizeSlider_OnLoad(this)</OnLoad>
+                            <OnValueChanged>GudaBag.SettingsPopup_TrackedBarSizeSlider_OnValueChanged(this)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+                </Frames>
+            </Frame>
+
+            <!-- ============================================ -->
+            <!-- 分类选项卡内容（未改动）                     -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_CategoriesTab" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString name="$parent_Header" inherits="GameFontNormal" text="Manage item categories and their display order:">
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="5" y="-5"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                            <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Manage item categories and their display order:"]) end</OnLoad>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <!-- 分类列表滚动框架 -->
+                    <ScrollFrame name="Guda_SettingsPopup_CategoriesScrollFrame" inherits="FauxScrollFrameTemplate">
+                        <Size><AbsDimension x="440" y="320"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="5" y="-25"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnVerticalScroll>
+                                FauxScrollFrame_OnVerticalScroll(18, GudaBag.SettingsPopup_CategoriesTab_Update)
+                            </OnVerticalScroll>
+                            <OnShow>
+                                GudaBag.SettingsPopup_CategoriesTab_Update()
+                            </OnShow>
+                        </Scripts>
+                    </ScrollFrame>
+
+                    <!-- 分类行容器 -->
+                    <Frame name="Guda_SettingsPopup_CategoryListContainer">
+                        <Size><AbsDimension x="420" y="320"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="Guda_SettingsPopup_CategoriesScrollFrame" relativePoint="TOPLEFT"/>
+                        </Anchors>
+                    </Frame>
+
+                    <!-- 添加分类按钮 -->
+                    <Button name="Guda_SettingsPopup_AddCategoryButton" inherits="UIPanelButtonTemplate">
+                        <Size><AbsDimension x="120" y="25"/></Size>
+                        <Anchors>
+                            <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+                                <Offset><AbsDimension x="5" y="10"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>GudaBag.SettingsPopup_AddCategory_OnClick()</OnClick>
+                        </Scripts>
+                    </Button>
+
+                    <!-- 重置为默认值按钮 -->
+                    <Button name="Guda_SettingsPopup_ResetCategoriesButton" inherits="UIPanelButtonTemplate">
+                        <Size><AbsDimension x="120" y="25"/></Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativeTo="Guda_SettingsPopup_AddCategoryButton" relativePoint="RIGHT">
+                                <Offset><AbsDimension x="10" y="0"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>GudaBag.SettingsPopup_ResetCategories_OnClick()</OnClick>
+                        </Scripts>
+                    </Button>
+                </Frames>
+            </Frame>
+
+            <!-- ============================================ -->
+            <!-- 指南选项卡内容（未改动）                     -->
+            <!-- ============================================ -->
+            <Frame name="Guda_SettingsPopup_GuideTab" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-90"/></Offset>
+                    </Anchor>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
+                        <Offset><AbsDimension x="-15" y="15"/></Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString name="$parent_Instructions" inherits="GameFontHighlight" justifyH="LEFT" justifyV="TOP">
+                            <Size><AbsDimension x="440" y="0"/></Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT">
+                                    <Offset><AbsDimension x="15" y="-15"/></Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Frame>
+        </Frames>
+
+        <Scripts>
+            <OnLoad>
+                GudaBag.SettingsPopup_OnLoad(this)
+            </OnLoad>
+            <OnShow>
+                GudaBag.SettingsPopup_OnShow(this)
+            </OnShow>
+            <OnMouseDown>
+                if (arg1 == "LeftButton") then
+                    this:StartMoving()
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                this:StopMovingOrSizing()
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+
+    <!-- 分类编辑器弹出窗口 -->
+    <Frame name="Guda_CategoryEditor" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent" frameStrata="FULLSCREEN_DIALOG" frameLevel="110">
+        <Size>
+            <AbsDimension x="400" y="480"/>
+        </Size>
+
+        <Anchors>
+            <Anchor point="CENTER" relativePoint="CENTER" relativeTo="UIParent">
+                <Offset>
+                    <AbsDimension x="0" y="50"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+
+        <Layers>
+            <Layer level="ARTWORK">
+            <!-- 标题 -->
+                <FontString name="$parent_Title" inherits="GameFontNormalLarge" text="Edit Category">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset>
+                                <AbsDimension x="0" y="-15"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <Color r="1" g="0.82" b="0"/>
+                    <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Edit Category"]) end</OnLoad>
+                </FontString>
+
+                <!-- 名称标签 -->
+                <FontString name="$parent_NameLabel" inherits="GameFontNormal" text="Name:">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="20" y="-45"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Name:"]) end</OnLoad>
+                </FontString>
+
+                <!-- 匹配模式标签 -->
+                <FontString name="$parent_MatchModeLabel" inherits="GameFontNormal" text="Match Mode:">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="20" y="-110"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Match Mode:"]) end</OnLoad>
+                </FontString>
+
+                <!-- 规则标签 -->
+                <FontString name="$parent_RulesLabel" inherits="GameFontNormal" text="Rules:">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="20" y="-145"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <OnLoad>if GudaBag.L then this:SetText(GudaBag.L["Rules:"]) end</OnLoad>
+                </FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+            <!-- 关闭按钮 -->
+            <Button name="$parent_CloseButton">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Scripts>
+                    <OnLoad>
+                        this:SetNormalTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetPushedTexture("Interface\\AddOns\\Guda\\Assets\\close")
+                        this:SetHighlightTexture("Interface\\AddOns\\Guda\\Assets\\close", "ADD")
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                        local ht = this:GetHighlightTexture()
+                        if ht then ht:SetAlpha(0.5) end
+                    </OnLoad>
+                    <OnEnter>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(1, 1, 1) end
+                    </OnEnter>
+                    <OnLeave>
+                        local nt = this:GetNormalTexture()
+                        if nt then nt:SetVertexColor(0.8, 0.8, 0.8) end
+                    </OnLeave>
+                </Scripts>
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-5" y="-5"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Guda_CategoryEditor:Hide()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 名称编辑框 -->
+            <EditBox name="Guda_CategoryEditor_NameEditBox" autoFocus="false" inherits="InputBoxTemplate">
+                <Size>
+                    <AbsDimension x="150" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="80" y="-42"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnEscapePressed>
+                        this:ClearFocus()
+                    </OnEscapePressed>
+                    <OnEnterPressed>
+                        this:ClearFocus()
+                    </OnEnterPressed>
+                </Scripts>
+            </EditBox>
+
+            <!-- 匹配模式：任意单选框 -->
+            <CheckButton name="Guda_CategoryEditor_MatchAny" inherits="UIRadioButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="100" y="-122"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        GudaBag.CategoryEditor_SetMatchMode("any")
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <!-- 匹配模式：全部单选框 -->
+            <CheckButton name="Guda_CategoryEditor_MatchAll" inherits="UIRadioButtonTemplate">
+                <Size>
+                    <AbsDimension x="20" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="Guda_CategoryEditor_MatchAny" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="60" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        GudaBag.CategoryEditor_SetMatchMode("all")
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <!-- 规则滚动框架 -->
+            <ScrollFrame name="Guda_CategoryEditor_RulesScrollFrame" inherits="FauxScrollFrameTemplate">
+                <Size>
+                    <AbsDimension x="335" y="235"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="20" y="-175"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnVerticalScroll>
+                        FauxScrollFrame_OnVerticalScroll(28, GudaBag.CategoryEditor_UpdateRulesDisplay)
+                    </OnVerticalScroll>
+                </Scripts>
+            </ScrollFrame>
+
+            <!-- 规则容器（滚动框架的子项） -->
+            <Frame name="Guda_CategoryEditor_RulesContainer">
+                <Size>
+                    <AbsDimension x="310" y="280"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="Guda_CategoryEditor_RulesScrollFrame" relativePoint="TOPLEFT"/>
+                </Anchors>
+            </Frame>
+
+            <!-- 添加规则按钮 -->
+            <Button name="Guda_CategoryEditor_AddRuleButton" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-20" y="-157"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        GudaBag.CategoryEditor_AddRule()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 保存按钮 -->
+            <Button name="Guda_CategoryEditor_SaveButton" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="25"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT">
+                        <Offset>
+                            <AbsDimension x="-20" y="15"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        GudaBag.CategoryEditor_Save()
+                    </OnClick>
+                </Scripts>
+            </Button>
+
+            <!-- 取消按钮 -->
+            <Button name="Guda_CategoryEditor_CancelButton" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="100" y="25"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="Guda_CategoryEditor_SaveButton" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-10" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Guda_CategoryEditor:Hide()
+                    </OnClick>
+                </Scripts>
+            </Button>
+        </Frames>
+
+        <Scripts>
+            <OnLoad>
+                GudaBag.CategoryEditor_OnLoad(this)
+            </OnLoad>
+            <OnShow>
+                GudaBag.CategoryEditor_OnShow(this)
+            </OnShow>
+            <OnHide>
+                -- 关闭编辑分类时，同时关闭可能仍打开的类型/值下拉菜单
+                if GudaBag.CloseSimpleDropdown then GudaBag.CloseSimpleDropdown() end
+            </OnHide>
+            <OnMouseDown>
+                if (arg1 == "LeftButton") then
+                    this:StartMoving()
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                this:StopMovingOrSizing()
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+
+</Ui>

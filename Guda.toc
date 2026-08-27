@@ -1,0 +1,57 @@
+## Interface: 11200
+## Title: Guda
+## Title-zhCN:|CFF00FF00[|r|CFFDD66DD界面|r|CFF00FF00] Guda背包
+## Notes: All-in-one bag and bank addon for World of Warcraft 1.12.1 (Turtle WoW)
+## Notes-zhCN: 最好用的魔兽世界1.12.1客户端（含乌龟服、水豚服）整合背包和银行插件
+## Version: 3.0.0
+## Author: Vati, 武藤纯子酱, 水长东
+## SavedVariables: Guda_DB
+## SavedVariablesPerCharacter: Guda_CharDB
+## OptionalDeps: pfUI, DFRL
+
+Localization.lua
+GudaShared.lua
+
+Core\Init.lua
+Core\Theme.lua
+Core\Constants.lua
+Core\Database.lua
+Core\SharedData.lua
+DB\QuestItems.lua
+Core\Events.lua
+Core\Utils.lua
+Core\ItemDetection.lua
+Core\CategoryManager.lua
+Core\Tooltip.lua
+Core\ClamOpener.lua
+Core\AutoLoot.lua
+Core\Nampower.lua
+Core\CacheWarmer.lua
+Core\RecentLoot.lua
+
+Data\BagScanner.lua
+Data\BankScanner.lua
+Data\MailboxScanner.lua
+Data\MoneyTracker.lua
+Data\EquipmentScanner.lua
+Data\EquipmentSets.lua
+
+Sorting\SortEngine.lua
+Sorting\BagReplacer.lua
+
+# UI Lua must load before XML so OnLoad handlers exist
+UI\ItemButton.lua
+UI\FrameHelpers.lua
+UI\BagFrame.lua
+UI\BankFrame.lua
+UI\MailboxFrame.lua
+UI\QuestItemBar.lua
+UI\TrackedItemBar.lua
+UI\SettingsPopup.lua
+UI\ItemButton.xml
+UI\BagFrame.xml
+UI\BankFrame.xml
+UI\MailboxFrame.xml
+UI\SettingsPopup.xml
+
+Core\Main.lua
