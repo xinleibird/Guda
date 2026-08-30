@@ -1649,6 +1649,14 @@ end
 function GudaBag.BankFrame_MoneyFrame_OnLoad(self)
     addon:Debug("Bank MoneyFrame OnLoad called for: " .. self:GetName())
 
+    -- 禁用金币按钮的原生点击（打开 CoinPickupFrame 拆分货币）。
+    -- SmallMoneyFrameTemplate 自带 OnClick；银行货币是只读显示，
+    -- 不设置 CoinPickupFrame.maxMoney，点击会报错。
+    -- 银行的货币交互由覆盖层（右键菜单）提供，不依赖原生拆分对话框。
+    if GudaBag.DisableMoneyCoinButtons then
+        GudaBag.DisableMoneyCoinButtons(self)
+    end
+
     -- 在所有货币面额按钮上设置提示处理函数
     local buttons = {"GoldButton", "SilverButton", "CopperButton"}
 
@@ -2494,6 +2502,17 @@ function BankFrame:Initialize()
         addon:DebugCategory("ScheduleBankFrameUpdate: delay=%s, wasAlreadyPending=%s", tostring(delay), tostring(wasAlreadyPending))
     end
 
+    -- 取消任何待处理的限流更新（对应背包的 CancelPendingUpdate）。
+    -- 增量更新成功后调用，保留当前布局与占位符位置，
+    -- 使分类视图与背包一致：下次打开/刷新才重排（补位）。
+    local function CancelPendingBankUpdate()
+        if bankThrottle.frame then
+            bankThrottle.frame:Hide()
+        end
+        bankThrottle.pending = false
+        bankThrottle.elapsed = 0
+    end
+
     -- 注意：银行背包（5-10）的 BAG_UPDATE 由下方的 updateFrame 处理，
     -- 它提供增量更新逻辑。这里不需要单独的 OnBagUpdate
     -- 处理函数，否则会导致重复处理。
@@ -2570,11 +2589,10 @@ function BankFrame:Initialize()
                             addon:DebugCategory("  -> slot emptied, incremental update done, no full redraw needed")
                         else
                             addon:DebugCategory("  -> item added, incremental update done")
-                            -- 安全网：物品出现了，在分类视图中用完整重绘验证
-                            if viewType == "category" then
-                                ScheduleBankFrameUpdate(0.3)
-                            end
                         end
+                        -- 与背包一致：增量成功即取消待处理的完整重绘，
+                        -- 布局保持稳定（空占位符位置不动），下次打开/刷新才重排
+                        CancelPendingBankUpdate()
                         return
                     end
                 end
@@ -2648,9 +2666,11 @@ function BankFrame:Initialize()
                         -- 缓存会在下次完整重绘时更新（如果需要）
                         return
                     elseif realItems == cacheItems then
-                        -- 物品数量无变化 —— 可能是物品交换或过期数据
-                        addon:DebugCategory("  -> item count unchanged (%d), scheduling safety-net redraw", realItems)
-                        ScheduleBankFrameUpdate(0.3)
+                        -- 物品数量无变化 —— 可能是物品交换或过期数据。
+                        -- 与背包一致：不做安全网重绘，保持增量视图与布局稳定
+                        -- （空占位符位置不动，下次打开/刷新才重排）
+                        addon:DebugCategory("  -> item count unchanged (%d), keeping incremental view", realItems)
+                        CancelPendingBankUpdate()
                         return
                     end
                     -- 物品被添加 —— 需要完整重绘
@@ -2681,15 +2701,10 @@ function BankFrame:Initialize()
                     local result = BankFrame:UpdateChangedSlots(arg1)
                     addon:DebugCategory("  UpdateChangedSlots(%d) = %d", arg1, result)
                     if result >= 0 then
-                    -- 增量更新成功 —— 此背包无需完整重绘
-                    -- 但不要取消待处理的重绘 —— 其他变化可能仍需要它们
-                    -- 分类视图的安全网：物品被添加时（result > 0 = 槽位发生变化）
-                        if result > 0 then
-                            local catViewType = addon.Modules.DB:GetSetting("bankViewType") or "single"
-                            if catViewType == "category" then
-                                ScheduleBankFrameUpdate(0.3)
-                            end
-                        end
+                        -- 增量更新成功 —— 此背包无需完整重绘。
+                        -- 与背包一致：取消待处理的完整重绘以保留增量更新，
+                        -- 布局保持稳定（空占位符位置不动），下次打开/刷新才重排
+                        CancelPendingBankUpdate()
                         return
                     end
                     -- 回退到完整重绘

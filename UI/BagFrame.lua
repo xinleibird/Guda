@@ -316,6 +316,7 @@ function GudaBag.BagFrame_OnHide(self)
 
     -- 重置自动补位标记：下次打开背包时重新执行 autoFillRows 补位
     BagFrame.bagAutoFilledThisSession = false
+    BagFrame.autoFillCategoryOrder = nil
 
 	-- 框架隐藏时清理所有按钮（不显示时这样做是安全的）
 	-- 使用 itemButtons 哈希表而非 GetChildren() 以避免表分配
@@ -1475,8 +1476,10 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
     -- 仅在本次打开背包的首次渲染时执行（bagAutoFilledThisSession 控制），
     -- 这样背包打开期间卖出/移动物品时分类块位置保持稳定，不会每次
     -- Update 都跳动；关闭背包（OnHide）会重置标志，下次打开重新补位。
-    if addon.Modules.DB:GetSetting("autoFillRows")
-       and not self.bagAutoFilledThisSession then
+    -- 注意：补位后的顺序保存到 self.autoFillCategoryOrder，本次会话内
+    -- 后续 Update 都按该顺序渲染（只保留仍存在的分类），避免任意点击
+    -- 触发 Update 后布局回到未补位的原始顺序。
+    if addon.Modules.DB:GetSetting("autoFillRows") and not self.bagAutoFilledThisSession then
         self.bagAutoFilledThisSession = true
         -- 分类块在其网格行首所占的宽度（像素）。
         local function blockWidthOf(cat)
@@ -1525,7 +1528,27 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
             remaining[best] = nil
             curX = curX + bestW + 20
         end
+        -- 缓存本次补位后的顺序，会话内后续 Update 复用，保持布局稳定
+        self.autoFillCategoryOrder = ordered
         renderCats = ordered
+    elseif addon.Modules.DB:GetSetting("autoFillRows")
+       and self.autoFillCategoryOrder then
+        -- 后续渲染：按已缓存的补位顺序渲染，只保留仍存在的分类。
+        -- 先记录当前 live 集合（renderCats 已基于最新物品状态重建），
+        -- 再按缓存的顺序输出；不在缓存中的新分类追加到末尾。
+        local alive = {}
+        for _, c in ipairs(renderCats) do alive[c] = true end
+        local reordered = {}
+        for _, c in ipairs(self.autoFillCategoryOrder) do
+            if alive[c] then
+                table.insert(reordered, c)
+                alive[c] = nil
+            end
+        end
+        for _, c in ipairs(renderCats) do
+            if alive[c] then table.insert(reordered, c) end
+        end
+        renderCats = reordered
     end
 
     -- 渲染各个分类（跳过已合并的和 Empty 分类）
@@ -3113,6 +3136,13 @@ end
 -- 金钱框架加载时处理函数
 function GudaBag.BagFrame_MoneyFrame_OnLoad(self)
 	addon:Debug("MoneyFrame OnLoad called for: " .. self:GetName())
+
+	-- 禁用金币按钮的原生点击（打开 CoinPickupFrame 拆分货币）。
+	-- SmallMoneyFrameTemplate 自带 OnClick；若未设置 maxMoney，点击会报错。
+	-- 背包的货币交互由覆盖层（右键菜单）提供，不依赖原生拆分对话框。
+	if GudaBag.DisableMoneyCoinButtons then
+		GudaBag.DisableMoneyCoinButtons(self)
+	end
 
 	-- 在所有货币面额按钮上设置提示处理函数
 	local buttons = {"GoldButton", "SilverButton", "CopperButton"}

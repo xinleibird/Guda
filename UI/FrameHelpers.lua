@@ -488,6 +488,26 @@ function GudaBag.PutCursorItemInFirstBankFreeSlot()
     return false
 end
 
+-- 禁用货币框架的金币/银币/铜币按钮的原生点击（打开 CoinPickupFrame）。
+-- SmallMoneyFrameTemplate 的金币按钮点击会调用 OpenCoinPickupFrame，
+-- 它依赖 CoinPickupFrame.maxMoney；对只读货币显示（邮箱/银行/背包等）
+-- 该值未设置，点击会报错 "attempt to perform arithmetic on local
+-- 'maxMoney' (a nil value)"。这里把 OnClick 覆盖为无操作。
+-- 注意：帧是只读显示时调用；若要保留玩家自身货币的拆分功能，
+-- 应改为在 OnClick 中设置 CoinPickupFrame.maxMoney = GetMoney()。
+function GudaBag.DisableMoneyCoinButtons(frame)
+    if not frame then return end
+    local buttons = {"GoldButton", "SilverButton", "CopperButton"}
+    for _, btnName in ipairs(buttons) do
+        local btn = getglobal(frame:GetName() .. btnName)
+        if btn and btn.SetScript then
+            btn:SetScript("OnClick", function()
+                -- 不打开原生货币拆分对话框（只读货币显示）
+            end)
+        end
+    end
+end
+
 -- BagFrame 和 BankFrame 共用的搜索过滤器
 -- 支持空格分隔的关键词，每个关键词属于以下三种之一：
 --   ~t:<keyword>   — tooltip 文本子串（不区分大小写）

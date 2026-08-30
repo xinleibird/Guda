@@ -55,6 +55,13 @@ function DB:Initialize()
 
 	-- 初始化角色数据库
 	if not Guda_CharDB then
+		-- 诊断：登录时角色存档缺失（Guda.lua 未加载）。
+		-- 常见原因：换客户端（WTF 目录不同）、换角色/角色改名、
+		-- 插件文件夹被改名（存档文件名与文件夹名一致）。
+		-- 此时只能用默认设置，提示用户以免误以为设置被重置。
+		if addon and addon.Print then
+			addon:Print(GudaBag.L["Character settings not found - starting with defaults. (Check: same client/WTF folder, same character, addon folder name unchanged)"])
+		end
 		Guda_CharDB = {
 			settings = {
 				showBankInBags = true,
@@ -84,6 +91,12 @@ function DB:Initialize()
 				trackedItems = {},
 			},
 		}
+	end
+
+	-- 兜底：存档存在但 settings 表缺失（如手改过的存档文件），
+	-- 避免后续访问 Guda_CharDB.settings.xxx 时报错导致初始化中断。
+	if not Guda_CharDB.settings then
+		Guda_CharDB.settings = {}
 	end
 
 	-- 确保现有安装具有新设置

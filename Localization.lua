@@ -108,6 +108,7 @@ L_HIDE_FOOTER_TT = "Hide the bottom section of the bag frame containing money an
 
 -- 初始化 / 生命周期（Core/Main.lua、Data/EquipmentScanner.lua、Core/Tooltip.lua）
 L["Initializing..."] = "Initializing..."
+L["Character settings not found - starting with defaults. (Check: same client/WTF folder, same character, addon folder name unchanged)"] = "Character settings not found - starting with defaults. (Check: same client/WTF folder, same character, addon folder name unchanged)"
 L["Initializing UI..."] = "Initializing UI..."
 L["Ready! Type /guda to open bags"] = "Ready! Type /guda to open bags"
 L["Initializing tooltip module..."] = "Initializing tooltip module..."
@@ -633,6 +634,7 @@ if locale == "zhCN" then
 
     -- 初始化 / 生命周期
     L["Initializing..."] = "正在初始化..."
+    L["Character settings not found - starting with defaults. (Check: same client/WTF folder, same character, addon folder name unchanged)"] = "未找到角色设置存档 - 已使用默认设置。(请检查:是否同一客户端/WTF 目录、同一角色、插件文件夹名是否被改动)"
     L["Initializing UI..."] = "正在初始化界面..."
     L["Ready! Type /guda to open bags"] = "就绪!输入 /guda 打开背包"
     L["Scanning equipped items..."] = "正在扫描装备物品..."

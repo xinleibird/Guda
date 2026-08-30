@@ -395,6 +395,38 @@ function GudaBag.SettingsPopup_OnShow(self)
         autoFillRowsCheckbox:SetChecked(autoFillRows and 1 or 0)
     end
 
+    -- 自动关闭背包复选框（仅由 XML OnLoad 设置初始状态，而 OnLoad 运行时
+    -- SavedVariables 可能尚未加载，会显示默认值；必须在这里按存档刷新）
+    local autoCloseBagsCheckbox = getglobal("Guda_SettingsPopup_AutoCloseBagsCheckbox")
+    if autoCloseBagsCheckbox then
+        local autoClose = Guda.Modules.DB:GetSetting("autoCloseBags")
+        if autoClose == nil then autoClose = true end
+        autoCloseBagsCheckbox:SetChecked(autoClose and 1 or 0)
+    end
+
+    -- 自动打开背包复选框（同上，OnShow 时按存档刷新）
+    local autoOpenBagsCheckbox = getglobal("Guda_SettingsPopup_AutoOpenBagsCheckbox")
+    if autoOpenBagsCheckbox then
+        local autoOpen = Guda.Modules.DB:GetSetting("autoOpenBags")
+        if autoOpen == nil then autoOpen = true end
+        autoOpenBagsCheckbox:SetChecked(autoOpen and 1 or 0)
+    end
+
+    -- 反向堆叠排序复选框（同上，OnShow 时按存档刷新）
+    local reverseStackSortCheckbox = getglobal("Guda_SettingsPopup_ReverseStackSortCheckbox")
+    if reverseStackSortCheckbox then
+        local reverseStackSort = Guda.Modules.DB:GetSetting("reverseStackSort") and true or false
+        reverseStackSortCheckbox:SetChecked(reverseStackSort and 1 or 0)
+    end
+
+    -- 标记不可用物品复选框（同上，OnShow 时按存档刷新）
+    local markUnusableCheckbox = getglobal("Guda_SettingsPopup_MarkUnusableCheckbox")
+    if markUnusableCheckbox then
+        local markUnusable = Guda.Modules.DB:GetSetting("markUnusableItems")
+        if markUnusable == nil then markUnusable = true end
+        markUnusableCheckbox:SetChecked(markUnusable and 1 or 0)
+    end
+
     -- 拾取标记样式下拉框
     local lootMarkerDropdown = getglobal("Guda_SettingsPopup_LootMarkerDropdown")
     if lootMarkerDropdown then

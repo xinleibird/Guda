@@ -230,6 +230,13 @@ function MailboxFrame:DisplayItems(items, charFullName, totalMails)
             moneyFrame:UnregisterAllEvents()
             moneyFrame:SetScript("OnShow", nil) -- 禁用暴雪自带的自动更新 OnShow
             moneyFrame:SetScript("OnEvent", nil)
+
+            -- 禁用金币按钮的原生点击（打开 CoinPickupFrame 拆分货币）。
+            -- 邮箱中的货币是只读的（不是玩家自己的钱），CoinPickupFrame.maxMoney
+            -- 未设置，点击会报错；且 SmallMoneyFrameTemplate 自带 OnClick。
+            if GudaBag.DisableMoneyCoinButtons then
+                GudaBag.DisableMoneyCoinButtons(moneyFrame)
+            end
             
             -- 恢复金币框架的右对齐，避免与图标重叠
             moneyFrame:ClearAllPoints()

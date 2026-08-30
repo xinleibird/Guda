@@ -242,6 +242,34 @@ Set the keybinding: **Esc → Key Bindings → Guda → Toggle Bags**
 
 ## 🔧 Recent Fixes
 
+- **Auto Fill Rows now stays applied during a bag session** – The row-filling
+  reorder (autoFillRows) was only computed on the first render after opening
+  the bag; any later `Update()` (e.g. clicking an item or opening settings)
+  rebuilt the category order from the original list, so the layout reverted to
+  the unfilled order. The filled order is now cached for the whole bag session
+  and reused on subsequent renders (still only kept stable while the bag is
+  open; the layout re-fills on the next open).
+- **Mailbox / bank / bag money frames no longer error on coin click** – The
+  coin buttons inherited from the Blizzard `SmallMoneyFrameTemplate` call
+  `OpenCoinPickupFrame`, which reads `CoinPickupFrame.maxMoney` (nil on
+  read-only money displays) and threw "attempt to perform arithmetic on local
+  'maxMoney' (a nil value)" when clicked (e.g. on a mailbox row's silver
+  button). The coin buttons' OnClick is now overridden to a no-op on Guda's
+  read-only money frames (mailbox rows, bank, bag); the bag/bank money
+  interactions (tooltip, right-click gold-tracking menu) are unaffected.
+- **Automation checkboxes no longer show stale state after /reload** – The
+  "Auto Open Bags", "Auto Close Bags", "Reverse Stack Sort" and "Mark Unusable
+  Items" checkboxes were only initialized in their XML OnLoad, which runs before
+  SavedVariables are available, so after a reload they displayed the default
+  checked state even when the saved setting was off (the setting itself was
+  saved correctly). They are now refreshed from the saved settings every time
+  the settings window opens, like all other checkboxes.
+- **Bank category view no longer reflows immediately** – The bank now uses the
+  same update strategy as the bag: after an item is added/removed, successful
+  incremental slot updates cancel any pending full redraw instead of scheduling
+  a "safety-net" redraw 0.3s later. Empty-slot placeholders keep their original
+  positions while the bank stays open (blocks no longer shift to compact the
+  gap right away); the layout re-flows on the next refresh, matching the bag.
 - **Reverse stack sort now works** – The "Reverse Stack Sort" setting is now
   actually honored by the sort engine (previously it was only saved, never read,
   so toggling it had no effect and the partial/small stack always ended up at the
