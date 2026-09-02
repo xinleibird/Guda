@@ -307,9 +307,9 @@ function TrackedItemBar:Update()
                     trackedIDs[itemID] = nil
                     addon.Modules.DB:SetSetting("trackedItems", trackedIDs)
                     
-                    -- 更新所有相关内容
-                    if Guda.Modules.BagFrame and Guda.Modules.BagFrame.Update then
-                        Guda.Modules.BagFrame:Update()
+                    -- 更新所有物品按钮的追踪勾选标记（无需全量重建）
+                    if Guda.Modules.BagFrame and Guda.Modules.BagFrame.RefreshItemMarkers then
+                        Guda.Modules.BagFrame:RefreshItemMarkers()
                     end
                     TrackedItemBar:Update()
                 end

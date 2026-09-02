@@ -831,16 +831,21 @@ function BagFrame:ScheduleUpdate()
 end
 
 -- 更新显示
-function BagFrame:Update()
+-- 只重建物品网格（分类/单视图）并清理未使用按钮。
+-- 这是 Update() 的核心部分；金钱/炉石/工具按钮/背包栏信息等
+-- 视图无关部分由 Update() 的尾部单独处理，热路径（拖放、标记
+-- 切换等）可直接调用本函数跳过那些重复开销。
+-- 返回 true 表示网格已完成重建，false 表示因守卫提前返回。
+function BagFrame:UpdateGrid()
 	if not Guda_BagFrame:IsShown() then
-		return
+		return false
 	end
 
 	-- 整理排序进行中：跳过完整的分类重建（排序引擎已隐藏全部物品按钮
 	-- 以提升帧率；重建会重新显示按钮并拖慢排序）。排序结束由
 	-- finishSort 调用 Update() 恢复。
 	if addon.Modules and addon.Modules.SortEngine and addon.Modules.SortEngine.sortingInProgress then
-		return
+		return false
 	end
 
 	-- 换包进行中：跳过完整的分类重建（BagReplacer 已隐藏全部物品按钮
@@ -848,7 +853,7 @@ function BagFrame:Update()
 	-- 显示按钮并拖慢换包）。换包结束由 FinalizeReplacement/Abort 调用
 	-- Update() 恢复。
 	if addon.Modules and addon.Modules.BagReplacer and addon.Modules.BagReplacer.inProgress then
-		return
+		return false
 	end
 
 	-- 框架正被拖拽移动：跳过完整的分类重建
@@ -858,11 +863,11 @@ function BagFrame:Update()
 	-- 以补上拖动期间发生的任何变化。
 	if isFrameMoving then
 		self:UpdateLockStates()
-		return
+		return false
 	end
 
 	local viewType = addon.Modules.DB:GetSetting("bagViewType") or "single"
-	addon:DebugCategory("Update() START: viewType=%s", viewType)
+	addon:DebugCategory("UpdateGrid() START: viewType=%s", viewType)
 
     -- 为帧预算跟踪记录入口
     if addon.Modules.Utils and addon.Modules.Utils.ReportEntry then
@@ -892,7 +897,7 @@ function BagFrame:Update()
 
 		if hasDisplayedItems and not inCategoryView then
 			self:UpdateLockStates()
-			return
+			return false
 		end
 		-- 如果没有显示任何物品，或处于分类视图（放置目标
 		-- 占位符需要渲染），则继续完整更新
@@ -986,31 +991,6 @@ function BagFrame:Update()
 		end
 	end
 
-	-- 更新金钱
-	self:UpdateMoney()
-
-	-- 更新炉石
-	self:UpdateHearthstone()
-
-	-- 更新分解 / 开锁表头快捷按钮
-	self:RefreshUtilityButtons()
-
-	-- 更新背包槽位信息
-	self:UpdateBagSlotsInfo(bagData, isOtherChar)
-
-	-- 更新背包栏布局（悬停选项）
-	self:UpdateBaglineLayout()
-
-	-- 品质过滤栏重新布局后，重新对齐左边缘（动态计算）
-	if BagFrame.AlignQualityBar then
-		BagFrame:AlignQualityBar()
-	end
-
-	-- 更新分类侧栏按钮状态
-	if BagFrame.UpdateCategoryBarButtons then
-		BagFrame:UpdateCategoryBarButtons()
-	end
-
 	-- 显示完成后清理未使用的按钮（防止拖拽/放置问题）
 	-- 使用 itemButtons 哈希表而非 GetChildren() 以避免表分配
 	local hiddenCount = 0
@@ -1028,13 +1008,72 @@ function BagFrame:Update()
 			end
 		end
 	end
-	addon:DebugCategory("Update() CLEANUP: hidden=%d, stillShown=%d", hiddenCount, stillShownCount)
+	addon:DebugCategory("UpdateGrid() CLEANUP: hidden=%d, stillShown=%d", hiddenCount, stillShownCount)
 
     -- 记录性能指标
     if addon.Modules.Utils and addon.Modules.Utils.RecordUpdateEnd then
         addon.Modules.Utils:RecordUpdateEnd()
     end
-	addon:DebugCategory("Update() END")
+	addon:DebugCategory("UpdateGrid() END")
+	return true
+end
+
+-- 完整更新 = 物品网格重建（UpdateGrid）+ 视图无关的底部栏/工具刷新。
+-- 视图无关部分（金钱/炉石/工具按钮/背包栏信息等）与物品内容无关，
+-- 物品网格变化（BAG_UPDATE、拖放等）不需要重复执行它们。
+function BagFrame:Update()
+	if not self:UpdateGrid() then
+		return
+	end
+
+	-- 更新金钱
+	self:UpdateMoney()
+
+	-- 更新炉石
+	self:UpdateHearthstone()
+
+	-- 更新分解 / 开锁表头快捷按钮
+	self:RefreshUtilityButtons()
+
+	-- 更新背包槽位信息
+	local bagData
+	if currentViewChar then
+		bagData = addon.Modules.DB:GetCharacterBags(currentViewChar)
+	else
+		bagData = addon.Modules.BagScanner:GetBagData()
+	end
+	self:UpdateBagSlotsInfo(bagData, currentViewChar ~= nil)
+
+	-- 更新背包栏布局（悬停选项）
+	self:UpdateBaglineLayout()
+
+	-- 品质过滤栏重新布局后，重新对齐左边缘（动态计算）
+	if BagFrame.AlignQualityBar then
+		BagFrame:AlignQualityBar()
+	end
+
+	-- 更新分类侧栏按钮状态
+	if BagFrame.UpdateCategoryBarButtons then
+		BagFrame:UpdateCategoryBarButtons()
+	end
+end
+
+-- 轻量刷新所有可见物品按钮的状态标记（物品锁定锁、格子图钉、
+-- 追踪勾选、拾取标记）。供 Ctrl+右键锁定、Alt+右键固定、
+-- Alt+左键追踪等只影响图标的操作使用 —— 这些操作此前各自触发
+-- 一次背包 + 银行的全量 Update() 重建，完全没必要。
+function BagFrame:RefreshItemMarkers()
+	if not Guda_BagFrame or not Guda_BagFrame:IsShown() then return end
+	local iconSize = addon.Modules.DB:GetSetting("iconSize") or addon.Constants.BUTTON_SIZE
+	for _, bagParent in pairs(bagParents) do
+		if bagParent and bagParent.itemButtons then
+			for button in pairs(bagParent.itemButtons) do
+				if button and button.hasItem ~= nil then
+					GudaBag.ItemButton_RefreshMarkers(button, iconSize)
+				end
+			end
+		end
+	end
 end
 
 -- 委托给集中式辅助函数
@@ -3910,8 +3949,12 @@ function GudaBag.BagFrame_ToggleKeyring()
 		end
 	end
 
-	-- 刷新显示
-	BagFrame:Update()
+	-- 刷新显示（只影响物品网格，无需更新金钱/炉石等）
+	if BagFrame.UpdateGrid then
+		BagFrame:UpdateGrid()
+	else
+		BagFrame:Update()
+	end
 end
 
 -- 灵魂袋开关处理函数
@@ -3931,8 +3974,12 @@ function GudaBag.BagFrame_ToggleSoulBag()
 		end
 	end
 
-	-- 刷新显示
-	BagFrame:Update()
+	-- 刷新显示（只影响物品网格，无需更新金钱/炉石等）
+	if BagFrame.UpdateGrid then
+		BagFrame:UpdateGrid()
+	else
+		BagFrame:Update()
+	end
 end
 
 -- 更新灵魂袋按钮上的灵魂碎片数量
@@ -4869,8 +4916,12 @@ function GudaBag.BagSlot_OnClick(button, bagID)
 		-- 更新背包槽位外观（变暗/恢复）
 		GudaBag.BagSlot_Update(button, bagID)
 
-		-- 刷新背包显示
-		BagFrame:Update()
+		-- 刷新物品网格（隐藏/显示背包只影响网格，无需更新金钱/炉石等）
+		if BagFrame.UpdateGrid then
+			BagFrame:UpdateGrid()
+		else
+			BagFrame:Update()
+		end
 
 		return
 	end
@@ -5152,6 +5203,15 @@ function BagFrame:Initialize()
      updateThrottle.elapsed = 0
  end
 
+ -- 供热路径（ItemButton 拖放等）使用的防抖兜底刷新。
+ -- 正常的物品移动会触发 BAG_UPDATE → 增量路径，增量成功时通过
+ -- CancelPendingUpdate 取消本待处理重绘；若事件缺失/延迟，本重绘
+ -- 作为兜底在 delay 秒后执行。相比拖放处理函数里同步调用全量
+ -- Update()，可让 BAG_UPDATE 增量路径优先，避免同一帧内重建两次。
+ function BagFrame:ScheduleGridUpdate(delay)
+     ScheduleBagFrameUpdate(delay)
+ end
+
  -- 背包变化时更新（防抖，防止快速背包更新导致卡顿）
  -- 直接注册以访问 arg1（变化的 bagID），用于增量缓存更新
  local bagUpdateFrame = CreateFrame("Frame")
@@ -5230,26 +5290,24 @@ function BagFrame:Initialize()
 	end, "BagFrame")
 
 	-- 物品锁定/解锁时更新（为交易、邮寄等做防抖）
+	-- 两种视图统一使用轻量的 UpdateLockStates（仅刷新去饱和/置灰状态）。
+	-- 此前单视图走 ScheduleBagFrameUpdate(0.15) 触发全量 Update() 重建：
+	-- 右键把物品附加到邮箱（或交易/出售等任何锁定变化）都会导致一次
+	-- 完整的布局重建（数百按钮 × 每格多项 API/纹理操作），造成明显卡顿。
 	local lockUpdatePending = false
 	addon.Modules.Events:Register("ITEM_LOCK_CHANGED", function()
 		if currentViewChar then return end
 		if not Guda_BagFrame:IsShown() then return end
-		-- 在分类视图中，防抖锁定状态更新（拖动期间触发非常频繁）
-		local viewType = addon.Modules.DB:GetSetting("bagViewType") or "single"
-		if viewType == "category" then
-			if not lockUpdatePending then
-				lockUpdatePending = true
-				GudaBag.ScheduleTimer(0.05, function()
-					lockUpdatePending = false
-					if Guda_BagFrame:IsShown() and not currentViewChar then
-						BagFrame:UpdateLockStates()
-					end
-				end)
-			end
-			return
+		-- 防抖锁定状态更新（拖动期间触发非常频繁）
+		if not lockUpdatePending then
+			lockUpdatePending = true
+			GudaBag.ScheduleTimer(0.05, function()
+				lockUpdatePending = false
+				if Guda_BagFrame:IsShown() and not currentViewChar then
+					BagFrame:UpdateLockStates()
+				end
+			end)
 		end
-		-- 单视图中锁定变化使用稍长的延迟（拖动期间触发非常频繁）
-		ScheduleBagFrameUpdate(0.15)
 	end, "BagFrame")
 
 	-- 与邮件、银行、拍卖行、交易交互时自动打开背包框架

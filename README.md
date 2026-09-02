@@ -242,6 +242,41 @@ Set the keybinding: **Esc → Key Bindings → Guda → Toggle Bags**
 
 ## 🔧 Recent Fixes
 
+- **Update() split into UpdateGrid() + view-agnostic tail (SUCC-bag inspired)** –
+  `BagFrame:Update()`/`BankFrame:Update()` used to rerun money, hearthstone,
+  utility-button scans (including the full-bag Thieves' Tools scan), bag-slot
+  info and footer layout on every rebuild. The grid rebuild now lives in
+  `UpdateGrid()`; the view-agnostic tail only runs in `Update()`. Hot paths
+  were switched accordingly:
+  - Ctrl+right-click item lock / set protection, Alt+right-click slot pin and
+    Alt+left-click tracking now refresh only the affected icons on all visible
+    buttons (`RefreshItemMarkers`) instead of rebuilding bag + bank.
+  - Drag-drop placements (equipment into bag, drop onto empty slot) schedule a
+    debounced fallback redraw (`ScheduleGridUpdate`) that is cancelled when the
+    BAG_UPDATE incremental path handles the change – no more double rebuilds in
+    the same frame.
+  - Category reassignment drops still rebuild synchronously but only the grid
+    (`UpdateGrid`).
+  - Keyring / soul-bag toggles and right-click bag hiding rebuild only the
+    grid.
+  - Un-tracking an item (TrackedItemBar Alt+click) only refreshes the tracking
+    checkmarks.
+- **Item lock changes no longer trigger a full bag/bank rebuild (borrowed from
+  SUCC-bag)** – In single view, any ITEM_LOCK_CHANGED (right-clicking an item
+  into a mail attachment, trading, selling) scheduled a full `Update()`
+  rebuild of the bag/bank layout just to grey out one icon. Both views now use
+  the lightweight `UpdateLockStates()` pass (debounced), which only refreshes
+  the desaturated state of each visible button – the same approach SUCC-bag
+  uses (`FrameUpdateLock`), keeping the layout untouched.
+- **No more hitch when attaching an item to mail** – Right-clicking an item
+  into a mail attachment fires BAG_UPDATE, which invalidated the per-slot
+  charge cache; the following full bag redraw then synchronously scanned the
+  tooltip of every slot to rebuild it (the cache also never stored "no
+  charges" results, so every charge-less item was re-scanned on every redraw),
+  producing a visible freeze. Charge lookups in the layout path are now
+  cache-only (never scanning tooltips), charge caches store a sentinel for
+  scanned-but-chargeless items, and the cache is warmed in the background by
+  CacheWarmer/tooltip hover like the other detection caches.
 - **Auto Fill Rows now stays applied during a bag session** – The row-filling
   reorder (autoFillRows) was only computed on the first render after opening
   the bag; any later `Update()` (e.g. clicking an item or opening settings)

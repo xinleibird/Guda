@@ -497,9 +497,12 @@ function ItemDetection:GetItemProperties(itemData, bagID, slotID)
     local isJunk = DetectJunk(lines, itemData)
     local isUnusable = DetectUnusable(lines)
 
-    -- 在属性扫描期间将充能次数存入按槽位的缓存（避免重复扫描工具提示）
+    -- 在属性扫描期间将充能次数存入按槽位的缓存（避免重复扫描工具提示）。
+    -- 无充能物品存入 false（哨兵值，表示"已扫描且确认无充能"）——
+    -- 若直接存 nil，Lua 会删除键，导致无充能物品永远缓存不命中，
+    -- 每次全量重绘都逐格同步扫描提示框（严重卡顿根源）。
     if bagID and slotID and tooltipLooksComplete then
-        chargesCache[bagID .. ":" .. slotID] = DetectCharges(lines)
+        chargesCache[bagID .. ":" .. slotID] = DetectCharges(lines) or false
     end
 
     -- 调试：记录灰色物品的垃圾检测
@@ -583,18 +586,34 @@ end
 function ItemDetection:GetCharges(itemData, bagID, slotID)
     if not bagID or not slotID then return nil end
     local slotKey = bagID .. ":" .. slotID
-    -- 如果可用，使用按槽位的缓存
-    if chargesCache[slotKey] ~= nil then
-        return chargesCache[slotKey]
+    -- 缓存以 false 作为"已扫描、无充能"的哨兵值（见 GetItemProperties）
+    local cached = chargesCache[slotKey]
+    if cached ~= nil then
+        return (cached == false) and nil or cached
     end
     -- 否则重新扫描工具提示
     local itemLink = itemData and itemData.link
     local lines = ScanTooltipLines(bagID, slotID, itemLink)
     local charges = DetectCharges(lines)
     if table.getn(lines) >= 2 then
-        chargesCache[slotKey] = charges
+        chargesCache[slotKey] = charges or false
     end
     return charges
+end
+
+-- 仅缓存的充能查找（布局热路径专用）。
+-- 命中（数字或 false 哨兵）时返回充能次数（无充能返回 nil），
+-- 未命中时返回 nil 且绝不扫描工具提示 —— 布局路径（ItemButton_SetItem）
+-- 在 BAG_UPDATE 触发的全量重绘中会对每个格子调用；若在缓存未热时
+-- 同步扫描，一次 BAG_UPDATE（例如右键把物品附加到邮件）就会对
+-- 每个格子逐个扫描提示框，阻塞数百毫秒。未命中的条目由
+-- GetItemProperties（CacheWarmer 预热或悬停时）顺带填充充能缓存。
+function ItemDetection:GetChargesCached(itemData, bagID, slotID)
+    if not bagID or not slotID then return nil end
+    local slotKey = bagID .. ":" .. slotID
+    local cached = chargesCache[slotKey]
+    if cached == nil then return nil end
+    return (cached == false) and nil or cached
 end
 
 -- 使特定背包的充能缓存失效（在 BAG_UPDATE 时调用）

@@ -1321,12 +1321,12 @@ function GudaBag.ItemButton_OnLoad(self)
                             else
                                 addon:Print(format(GudaBag.L["%s set protection restored"], link))
                             end
-                            -- 刷新背包/银行界面
-                            if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
-                                addon.Modules.BagFrame:Update()
+                            -- 刷新背包/银行界面的锁定/保护标记（无需全量重建）
+                            if addon.Modules.BagFrame and addon.Modules.BagFrame.RefreshItemMarkers then
+                                addon.Modules.BagFrame:RefreshItemMarkers()
                             end
-                            if addon.Modules.BankFrame and addon.Modules.BankFrame.Update then
-                                addon.Modules.BankFrame:Update()
+                            if addon.Modules.BankFrame and addon.Modules.BankFrame.RefreshItemMarkers then
+                                addon.Modules.BankFrame:RefreshItemMarkers()
                             end
                             return
                         end
@@ -1337,12 +1337,12 @@ function GudaBag.ItemButton_OnLoad(self)
                     else
                         addon:Print(format(GudaBag.L["%s unlocked"], link))
                     end
-                    -- 刷新背包/银行界面
-                    if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
-                        addon.Modules.BagFrame:Update()
+                    -- 刷新背包/银行界面的锁定标记（无需全量重建）
+                    if addon.Modules.BagFrame and addon.Modules.BagFrame.RefreshItemMarkers then
+                        addon.Modules.BagFrame:RefreshItemMarkers()
                     end
-                    if addon.Modules.BankFrame and addon.Modules.BankFrame.Update then
-                        addon.Modules.BankFrame:Update()
+                    if addon.Modules.BankFrame and addon.Modules.BankFrame.RefreshItemMarkers then
+                        addon.Modules.BankFrame:RefreshItemMarkers()
                     end
                 end
             end
@@ -1362,12 +1362,12 @@ function GudaBag.ItemButton_OnLoad(self)
                 else
                     addon:Print(format(GudaBag.L["Slot unpinned %s"], itemName))
                 end
-                -- 刷新以显示/隐藏图钉图标
-                if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
-                    addon.Modules.BagFrame:Update()
+                -- 刷新以显示/隐藏图钉图标（无需全量重建）
+                if addon.Modules.BagFrame and addon.Modules.BagFrame.RefreshItemMarkers then
+                    addon.Modules.BagFrame:RefreshItemMarkers()
                 end
-                if addon.Modules.BankFrame and addon.Modules.BankFrame.Update then
-                    addon.Modules.BankFrame:Update()
+                if addon.Modules.BankFrame and addon.Modules.BankFrame.RefreshItemMarkers then
+                    addon.Modules.BankFrame:RefreshItemMarkers()
                 end
             end
             return
@@ -1396,12 +1396,12 @@ function GudaBag.ItemButton_OnLoad(self)
                     end
                     addon.Modules.DB:SetSetting("trackedItems", trackedItems)
 
-                    -- 更新所有物品按钮
-                    if Guda.Modules.BagFrame and Guda.Modules.BagFrame.Update then
-                        Guda.Modules.BagFrame:Update()
+                    -- 更新所有物品按钮的追踪勾选标记（无需全量重建）
+                    if Guda.Modules.BagFrame and Guda.Modules.BagFrame.RefreshItemMarkers then
+                        Guda.Modules.BagFrame:RefreshItemMarkers()
                     end
-                    if Guda.Modules.BankFrame and Guda.Modules.BankFrame.Update then
-                        Guda.Modules.BankFrame:Update()
+                    if Guda.Modules.BankFrame and Guda.Modules.BankFrame.RefreshItemMarkers then
+                        Guda.Modules.BankFrame:RefreshItemMarkers()
                     end
                     if Guda.Modules.TrackedItemBar and Guda.Modules.TrackedItemBar.Update then
                         Guda.Modules.TrackedItemBar:Update()
@@ -1493,7 +1493,11 @@ function GudaBag.ItemButton_OnLoad(self)
             dropCooldownTime = GetTime() + 0.3
             HideCategoryDropIndicator()
             GudaBag.ClearCursorItem()
-            if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
+            -- 分类可能已变更（AssignItemToCategory），需要同步重建网格；
+            -- 使用 UpdateGrid 跳过金钱/炉石等视图无关部分
+            if addon.Modules.BagFrame and addon.Modules.BagFrame.UpdateGrid then
+                addon.Modules.BagFrame:UpdateGrid()
+            elseif addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
                 addon.Modules.BagFrame:Update()
             end
             return
@@ -1533,8 +1537,10 @@ function GudaBag.ItemButton_OnLoad(self)
             dropCooldownTime = GetTime() + 0.3
             HideCategoryDropIndicator()
             GudaBag.ClearCursorItem()
-            if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
-                addon.Modules.BagFrame:Update()
+            -- 物理放置会触发 BAG_UPDATE 增量路径；这里只安排防抖兜底
+            -- 重绘（增量成功时会自动取消），避免同步全量重建造成卡顿
+            if addon.Modules.BagFrame and addon.Modules.BagFrame.ScheduleGridUpdate then
+                addon.Modules.BagFrame:ScheduleGridUpdate(0.05)
             end
             return
         end
@@ -1554,8 +1560,9 @@ function GudaBag.ItemButton_OnLoad(self)
             dropCooldownTime = GetTime() + 0.3
             HideCategoryDropIndicator()
             GudaBag.ClearCursorItem()
-            if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
-                addon.Modules.BagFrame:Update()
+            -- 物理放置会触发 BAG_UPDATE 增量路径；这里只安排防抖兜底重绘
+            if addon.Modules.BagFrame and addon.Modules.BagFrame.ScheduleGridUpdate then
+                addon.Modules.BagFrame:ScheduleGridUpdate(0.05)
             end
             return
         end
@@ -1602,14 +1609,21 @@ function GudaBag.ItemButton_OnLoad(self)
             HideCategoryDropIndicator()
             GudaBag.ClearCursorItem()
 
-            -- 刷新界面
-            if addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
+            -- 刷新界面（分类已变更，需同步重建网格；
+            -- UpdateGrid 跳过金钱/炉石等视图无关部分）
+            if addon.Modules.BagFrame and addon.Modules.BagFrame.UpdateGrid then
+                addon.Modules.BagFrame:UpdateGrid()
+            elseif addon.Modules.BagFrame and addon.Modules.BagFrame.Update then
                 addon.Modules.BagFrame:Update()
             end
             if addon.Modules.BankFrame and addon.Modules.BankFrame.Update then
                 local bankFrame = getglobal("Guda_BankFrame")
                 if bankFrame and bankFrame:IsShown() then
-                    addon.Modules.BankFrame:Update()
+                    if addon.Modules.BankFrame.UpdateGrid then
+                        addon.Modules.BankFrame:UpdateGrid()
+                    else
+                        addon.Modules.BankFrame:Update()
+                    end
                 end
             end
         end
@@ -1773,6 +1787,28 @@ local function UpdateTrackingCheckmark(self, Utils)
         check:Show()
     else
         check:Hide()
+    end
+end
+
+-- 轻量刷新单个按钮上的状态标记（物品锁定锁、格子图钉、追踪勾选、
+-- 拾取标记）。这些标记只依赖查表（DB 设置/固定槽位表），不涉及
+-- tooltip 扫描或布局。用于 Ctrl+右键锁定、Alt+右键固定、Alt+左键
+-- 追踪等只需更新图标的操作 —— 取代原先的全量 Update() 重建。
+function GudaBag.ItemButton_RefreshMarkers(button, iconSize)
+    if not button or not button:IsShown() or button.isDropTarget then return end
+    if button.hasItem == nil then return end
+    if not iconSize and button.GetWidth then
+        iconSize = button:GetWidth() or 37
+    end
+    if UpdateLockIcon then UpdateLockIcon(button, iconSize) end
+    if UpdatePinIcon then UpdatePinIcon(button, iconSize) end
+    if UpdateTrackingCheckmark then
+        local Utils = addon and addon.Modules and addon.Modules.Utils
+        UpdateTrackingCheckmark(button, Utils)
+    end
+    if GudaBag.ItemButton_UpdateLootMarker then
+        local Utils = addon and addon.Modules and addon.Modules.Utils
+        GudaBag.ItemButton_UpdateLootMarker(button, Utils)
     end
 end
 
@@ -2404,7 +2440,11 @@ function GudaBag.ItemButton_SetItem(self, bagID, slotID, itemData, isBank, other
             if itemData and itemData.spellChargesRemaining and itemData.spellChargesRemaining > 1 then
                 charges = itemData.spellChargesRemaining
             elseif itemData and addon.Modules.ItemDetection then
-                charges = addon.Modules.ItemDetection:GetCharges(itemData, bagID, slotID)
+                -- 仅查充能缓存（免 tooltip 扫描）。BAG_UPDATE 会使充能缓存
+                -- 失效；若在缓存未热时同步扫描，一次 BAG_UPDATE（如右键把
+                -- 物品附加到邮件）触发的全量重绘会对每个格子逐个扫描提示框，
+                -- 造成明显卡顿。未命中时先不显示，CacheWarmer/悬停后补上。
+                charges = addon.Modules.ItemDetection:GetChargesCached(itemData, bagID, slotID)
             end
             if charges and charges > 0 then
                 chargesText:SetText("x" .. charges)

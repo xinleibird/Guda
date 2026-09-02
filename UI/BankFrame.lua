@@ -672,16 +672,19 @@ function BankFrame:ScheduleUpdate()
 end
 
 -- 更新显示
-function BankFrame:Update()
+-- 只重建银行物品网格（分类/单视图）并清理未使用按钮。
+-- Update() 的核心部分；金钱/银行槽位信息等视图无关部分由
+-- Update() 尾部单独处理。返回 true 表示网格已完成重建。
+function BankFrame:UpdateGrid()
     if not Guda_BankFrame:IsShown() then
-        return
+        return false
     end
 
     -- 整理排序进行中：跳过完整的分类重建（排序引擎已隐藏全部物品按钮
     -- 以提升帧率；重建会重新显示按钮并拖慢排序）。排序结束由
     -- finishSort 调用 Update() 恢复。
     if addon.Modules and addon.Modules.SortEngine and addon.Modules.SortEngine.sortingInProgress then
-        return
+        return false
     end
 
     -- 换包进行中：跳过完整的分类重建（BagReplacer 已隐藏全部物品按钮
@@ -689,14 +692,14 @@ function BankFrame:Update()
     -- 显示按钮并拖慢换包）。换包结束由 FinalizeReplacement/Abort 调用
     -- Update() 恢复。
     if addon.Modules and addon.Modules.BagReplacer and addon.Modules.BagReplacer.inProgress then
-        return
+        return false
     end
 
     -- 框架正被拖拽移动：跳过完整的分类重建，仅廉价地刷新锁定状态。
     -- EndBankFrameMove 会在放下时执行一次重建。
     if bankIsFrameMoving then
         self:UpdateLockStates()
-        return
+        return false
     end
 
     -- 为帧预算跟踪记录入口
@@ -723,7 +726,7 @@ function BankFrame:Update()
 
         if hasDisplayedItems then
             self:UpdateLockStates()
-            return
+            return false
         end
         -- 如果尚未显示物品，则继续完整更新
     end
@@ -829,12 +832,6 @@ function BankFrame:Update()
         end
     end
 
-    -- 更新金钱
-    self:UpdateMoney()
-
-    -- 更新银行槽位信息
-    self:UpdateBankSlotsInfo(bankData, isOtherChar)
-
     -- 显示完成后清理未使用的按钮（防止拖拽/放置问题）
     for _, bankBagParent in pairs(bankBagParents) do
         if bankBagParent and bankBagParent.itemButtons then
@@ -850,6 +847,41 @@ function BankFrame:Update()
     -- 记录性能指标
     if addon.Modules.Utils and addon.Modules.Utils.RecordUpdateEnd then
         addon.Modules.Utils:RecordUpdateEnd()
+    end
+    return true
+end
+
+-- 完整更新 = 银行物品网格重建（UpdateGrid）+ 视图无关的刷新。
+function BankFrame:Update()
+    if not self:UpdateGrid() then
+        return
+    end
+
+    -- 更新金钱
+    self:UpdateMoney()
+
+    -- 更新银行槽位信息
+    local bankData
+    if currentViewChar then
+        bankData = addon.Modules.DB:GetCharacterBank(currentViewChar)
+    else
+        bankData = addon.Modules.BankScanner:GetBankData()
+    end
+    self:UpdateBankSlotsInfo(bankData, currentViewChar ~= nil)
+end
+
+-- 轻量刷新所有可见银行物品按钮的状态标记（同 BagFrame:RefreshItemMarkers）。
+function BankFrame:RefreshItemMarkers()
+    if not Guda_BankFrame or not Guda_BankFrame:IsShown() then return end
+    local iconSize = addon.Modules.DB:GetSetting("iconSize") or addon.Constants.BUTTON_SIZE
+    for _, bankBagParent in pairs(bankBagParents) do
+        if bankBagParent and bankBagParent.itemButtons then
+            for button in pairs(bankBagParent.itemButtons) do
+                if button and button.hasItem ~= nil then
+                    GudaBag.ItemButton_RefreshMarkers(button, iconSize)
+                end
+            end
+        end
     end
 end
 
@@ -2518,22 +2550,18 @@ function BankFrame:Initialize()
     -- 处理函数，否则会导致重复处理。
 
     -- 物品锁定/解锁时更新（为交易、邮寄等做防抖）
+    -- 两种视图统一使用轻量的 UpdateLockStates（仅刷新去饱和/置灰状态）。
+    -- 此前单视图走 ScheduleBankFrameUpdate(0.15) 触发全量 Update() 重建，
+    -- 任何锁定变化（如右键附加物品到邮箱）都会导致一次完整布局重建。
     addon.Modules.Events:Register("ITEM_LOCK_CHANGED", function()
         -- 如果银行打开或我们的框架显示则允许处理
         local bankOpen = addon.Modules.BankScanner:IsBankOpen()
         local frameShown = Guda_BankFrame and Guda_BankFrame:IsShown()
         if not bankOpen and not frameShown then return end
         if currentViewChar then return end
-        -- 在分类视图中，仅视觉上更新锁定状态，不触发完整重绘
-        local viewType = addon.Modules.DB:GetSetting("bankViewType") or "single"
-        if viewType == "category" then
-            -- 只更新锁定的视觉状态，不触发完整重绘
-            -- （伪空占位符会被完整重绘破坏）
-            BankFrame:UpdateLockStates()
-            return
-        end
-        -- 单视图中锁定变化使用稍长的延迟
-        ScheduleBankFrameUpdate(0.15)
+        -- 只更新锁定的视觉状态，不触发完整重绘
+        -- （伪空占位符会被完整重绘破坏）
+        BankFrame:UpdateLockStates()
     end, "BankFrameUI")
 
     -- 注册银行特定的更新事件，并带增量槽位跟踪
