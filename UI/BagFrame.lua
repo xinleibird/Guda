@@ -269,6 +269,13 @@ function GudaBag.BagFrame_OnShow(self)
 	-- 调度延迟可用性检查，修复未缓存物品数据导致的误判
 	-- 该检查会在物品信息被 WoW 客户端完全加载后延迟一小段时间运行
 	ScheduleDeferredUsabilityCheck()
+
+	-- 后台预热整理引擎的工具提示缓存
+	-- （消除点击"确认整理"后逐物品同步扫描提示框的大卡顿；
+	-- 已缓存的物品是廉价命中，排入帧预算队列平滑执行）
+	if addon.Modules.SortEngine and addon.Modules.SortEngine.WarmTooltipCache then
+		addon.Modules.SortEngine:WarmTooltipCache({0, 1, 2, 3, 4})
+	end
 end
 
 -- 隐藏时（OnHide）

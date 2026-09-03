@@ -164,7 +164,7 @@ if TargetHPText ~= nil and TargetHPPercText ~= nil then
 	SE_DEFAULT_DELAY = 1.2
 end
 
-local seModel, seItemStacks, seItemClasses, seItemSortKeys
+local seModel, seItemStacks, seItemClasses, seItemSortKeys = {}, {}, {}, {}
 
 do
 	local f = CreateFrame("Frame", "Clean_UpFrame", UIParent)
@@ -244,12 +244,30 @@ local function SE_ItemTypeKey(itemClass)
 	return SE_KeyIn(SE_ITEM_TYPES, itemClass) or 0
 end
 
+local seSubClassMemo = {}
+local seInvTypesMemo = {}
+
 local function SE_ItemSubTypeKey(itemClass, itemSubClass)
-	return SE_KeyIn({GetAuctionItemSubClasses(SE_ItemTypeKey(itemClass))}, itemSubClass) or 0
+	local typeKey = SE_ItemTypeKey(itemClass)
+	local memoKey = typeKey .. ":" .. tostring(itemSubClass)
+	local cached = seSubClassMemo[memoKey]
+	if cached == nil then
+		cached = SE_KeyIn({GetAuctionItemSubClasses(typeKey)}, itemSubClass) or 0
+		seSubClassMemo[memoKey] = cached
+	end
+	return cached
 end
 
 local function SE_ItemInvTypeKey(itemClass, itemSubClass, itemSlot)
-	return SE_KeyIn({GetAuctionInvTypes(SE_ItemTypeKey(itemClass), SE_ItemSubTypeKey(itemClass, itemSubClass))}, itemSlot) or 0
+	local typeKey = SE_ItemTypeKey(itemClass)
+	local subKey = SE_ItemSubTypeKey(itemClass, itemSubClass)
+	local memoKey = typeKey .. ":" .. tostring(subKey)
+	local list = seInvTypesMemo[memoKey]
+	if not list then
+		list = {GetAuctionInvTypes(typeKey, subKey)}
+		seInvTypesMemo[memoKey] = list
+	end
+	return SE_KeyIn(list, itemSlot) or 0
 end
 
 local function SE_LT(a, b)
@@ -587,6 +605,33 @@ SE_Item = function(container, position)
 	end
 end
 
+-- 后台预热排序所需的工具提示缓存
+-- SE_Initialize 会为每个物品同步调用 SE_TooltipInfo（判定灵魂绑定/任务/
+-- 使用/法术/充能）；首次整理时缓存为空，100+ 个物品逐个扫描提示框会造成
+-- 数百毫秒到数秒的阻塞（"整理前几秒大卡顿"）。这里把 SE_Item 排入帧预算
+-- 工作队列提前执行 —— SE_Item 顺带填充 seTooltipCache 与拍卖分类备忘，
+-- 且对模型全局无副作用（SE_Initialize 每次排序开始时都会重建它们）。
+-- 已缓存的物品再次调用是廉价的缓存命中。
+function SortEngine:WarmTooltipCache(containers)
+	local Utils = addon.Modules and addon.Modules.Utils
+	if not (Utils and Utils.QueueWork) then return end
+	for _, container in ipairs(containers) do
+		local numSlots = GetContainerNumSlots(container)
+		if numSlots and numSlots > 0 then
+			for position = 1, numSlots do
+				if GetContainerItemLink(container, position) then
+					local c, p = container, position
+					Utils:QueueWork(function()
+						if SE_Item then
+							SE_Item(c, p)
+						end
+					end, "SortEngine.warm")
+				end
+			end
+		end
+	end
+end
+
 -- 统一入口：整理背包/银行（含确认对话框）
 function SortEngine:CleanUp(containers)
 	if self.sortingInProgress then
@@ -605,6 +650,9 @@ function SortEngine:CleanUp(containers)
 	-- 记录本次排序目标，供 SE_Start/finishSort 决定隐藏/恢复哪个框架的按钮
 	self.currentTarget = containers
 	SE_REVERSE = GudaBag.SortBagsRightToLeft
+	-- 用户阅读确认框的期间后台预热工具提示缓存，
+	-- 消除点击"确认"后 SE_Initialize 逐物品扫描的阻塞
+	self:WarmTooltipCache(SE_CONTAINERS)
 	local typeText = (containers == "bags") and "背包" or "银行"
 	StaticPopup_Show("SORT_BAGS_CONFIRM", typeText)
 	return true

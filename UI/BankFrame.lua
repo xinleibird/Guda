@@ -2449,6 +2449,12 @@ function BankFrame:Initialize()
 
             addon.Modules.BankFrame:EnsureBagButtonsInitialized()
             addon.Modules.BankFrame:Update()
+
+            -- 后台预热整理引擎的工具提示缓存
+            -- （银行整理确认后的初始化不再逐物品同步扫描提示框）
+            if addon.Modules.SortEngine and addon.Modules.SortEngine.WarmTooltipCache then
+                addon.Modules.SortEngine:WarmTooltipCache({-1, 5, 6, 7, 8, 9, 10})
+            end
         end)
     end, "BankFrameUI")
 
